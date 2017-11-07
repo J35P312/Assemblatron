@@ -50,7 +50,7 @@ def read_cigar(cigar):
 
 def report_splits(bam,working_dir,args):
     headerString="##fileformat=VCFv4.1\n";
-    headerString+="##source=SVDB\n";
+    headerString+="##source=ASSEMBLATRON\n";
     headerString+="##ALT=<ID=INV,Description=\"Inversion\">\n";
     headerString+="##ALT=<ID=BND,Description=\"Break end\">\n";
     headerString+="##INFO=<ID=SVTYPE,Number=1,Type=String,Description=\"Type of structural variant\">\n";
@@ -64,9 +64,12 @@ def report_splits(bam,working_dir,args):
     bam_prefix=bam.split("/")[-1]
     prefix=working_dir + "/" +  bam_prefix[0:-4]
     calls={}
+    print '{}_splits.sam'.format(prefix)
     for line in open( '{}_splits.sam'.format(prefix) ):
 
         content=line.strip().split("\t")
+        contig_id=content[0]
+        cigar=content[5]
         flag="{0:012b}".format(int(content[1]))
         if int(flag[-9]) or int(flag[0]):
             continue
@@ -109,7 +112,6 @@ def report_splits(bam,working_dir,args):
 
         if len(segments) == 1:
             continue
-
         distance_matrix=numpy.zeros( (len(segments),len(segments)))
         for segment in range(0,len(segments)):
             for neihbhour in range(0,len(segments)):
@@ -121,14 +123,13 @@ def report_splits(bam,working_dir,args):
         breakpoints={}
         for segment in range(0,len(segments)):
             closest_bp= min(distance_matrix[segment])
-            if 0 > closest_bp or closest_bp == float("inf") or closest_bp > args.max_dist:
+            if 0 > closest_bp or closest_bp == float("inf"):
                 continue
             B=numpy.argmin(distance_matrix[segment])
             if not segments[segment]["chr"] in calls:
                 calls[segments[segment]["chr"]]={}
             if not segments[B]["chr"] in calls[segments[segment]["chr"]]:
-                calls[segments[segment]["chr"]][segments[B]["chr"]]=set([])
-
+                calls[segments[segment]["chr"]][segments[B]["chr"]]={}
             calls[segments[segment]["chr"]][segments[B]["chr"]].add("{}\t{}\t{}\t{}\t{}\t{}".format(segments[segment]["chr"],segments[segment]["start"],segments[B]["chr"],segments[B]["start"],segments[segment]["orientation"],segments[B]["orientation"]))
 
 
@@ -145,6 +146,7 @@ def report_splits(bam,working_dir,args):
                         INFO="SVTYPE={};SVLEN={}".format("BND",abs(int(content[1])-int(content[3])))
                     else:
                         INFO="SVTYPE={}".format("BND")
+                    INFO+=";CONTIGID={};CIGAR={}".format(contig_id,cigar)
                     vcf_line=[chrA,content[1],"var_{}".format(i),"N","N[{}:{}[".format(content[2],content[3]),".","PASS",INFO]
                 print "\t".join(vcf_line)
                 i+=1
@@ -177,9 +179,8 @@ parser = argparse.ArgumentParser("""Assemblatron - a variant caller using aligne
 parser.add_argument('--working_dir',default="work",type=str, help="temporary analysis files will be stored here(default=work)")
 parser.add_argument('--bam',required = True,type=str, help="input bam")
 parser.add_argument('--q',type=int, default =10, help="minimum allowed mapping quality(default = 10)", required=False)
-parser.add_argument('--len'       ,type=int, default = 200, help="minimum length of alignments(default = 200)", required=False)
+parser.add_argument('--len'       ,type=int, default = 50, help="minimum length of alignments(default = 50)", required=False)
 parser.add_argument('--len_ctg'       ,type=int, default = 1000, help="minimum contig length(default = 1000)", required=False) 
-parser.add_argument('--max_dist'       ,type=int, default = 100, help="maximum distance of two breakpoints within a ontig(default = 100)", required=False) 
 args= parser.parse_args()
 main(args)
 
