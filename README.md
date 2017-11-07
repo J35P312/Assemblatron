@@ -1,5 +1,9 @@
 # Assemblatron - De novo assembly structural variant detection/validation tool
 Call structural variants, and evaluate 
+0: install
+enter the htsbox directory, and run make
+cd htsbox
+cd make
 
 1: align the contigs using bwa mem:
         bwa mem -x intractg  reference.fasta contigs.fa | samtools view -bhS - > contigs.bam
@@ -21,7 +25,7 @@ optional parameters:
 note: assemblatron is a prototype software.
 
 #Algorithm
-alignments having atleast one supplementary alignment are extracted from the bam file. The SV are then found using the CIGAR column, and supplementary alignment info. Alignments satisfying the given parameters(mapping quality, and length, as well as distnce between primary alignmen and supplementary alignment within the contig itself) are printed as SV. To reduce the false positive rate, low quality contigs should be removed before performing variant calling or alignment.
+A wrapper around a slighly modified version of htsbox
 
 #Future additions
 A variant imputation function will be added
