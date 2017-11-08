@@ -54,22 +54,28 @@ static void count_break(int c[5], int n_aa, aln_t *aa, const cmdopt_t *o)
 
 static void print_break_points(int n_aa, aln_t *aa, const cmdopt_t *o, const bam_hdr_t *h, const char *name, faidx_t *fai)
 {
+	//printf("BP%s\n",name);
+	//printf("AN%d",n_aa);
 	int i, n_high = 0;
-	if (n_aa < 1) return;
-	for (i = n_high = 0; i < n_aa; ++i)
-		if (aa[i].mapq >= o->min_q) aa[n_high++] = aa[i];
+	if (n_aa < 2) return;
+	for (i = n_high = 0; i < n_aa; ++i){
+		//printf("ITER%s\n",name);
+		if (aa[i].mapq >= -1) aa[n_high++] = aa[i];
+	}
 	n_aa = n_high;
-	if (n_aa < 1) return;
+	if (n_aa < 2) return;
 	ks_introsort(s2c, n_aa, aa);
 	if (!o->is_vcf) {
-		printf(">%s\n", name);
+		//printf(">%s\n", name);
 		for (i = 0; i < n_aa; ++i) { // print evidence
 			aln_t *p = &aa[i];
 			printf("#\t%d\t%d\t%c\t%s\t%d\t%d\t%d\t%.4f\t%d\t%d\t%d\n", p->qbeg, p->qbeg + p->qlen, "+-"[p->flag>>4&1],
 					h->target_name[p->tid], p->pos, p->pos + p->rlen, p->mapq, p->diff, p->score, p->tip_q[0], p->tip_q[1]);
 		}
 	}
+	//printf("HEJ2%s\n",name);
 	for (i = 1; i < n_aa; ++i) {
+		//printf("BP3%s\n",name);
 		aln_t *q = &aa[i-1], *p = &aa[i];
 		int min_mapq = q->mapq < p->mapq? q->mapq : p->mapq;
 		int min_sc = q->score < p->score? q->score : p->score;
@@ -111,8 +117,8 @@ static void print_break_points(int n_aa, aln_t *aa, const cmdopt_t *o, const bam
 				max_end = qt_end > pt_start? qt_end : pt_start;
 			}
 			char *ref = fai ? faidx_fetch_seq(fai, h->target_name[q->tid], max_start, max_start, &rlen) : "N";
-			printf("%s\t%d\t.\t%c\t<%s>\t30\t%s\tSVTYPE=%s;END=%d;SVLEN=%d;QGAP=%d;MINMAPQ=%d;MINSC=%d;MINTIPQ=%d\n", h->target_name[q->tid],
-					max_start+1, toupper(ref[0]), type_str, min_tip_q < o->min_tip_q? "LowSupp" : ".", type_str, max_end, len, qgap, min_mapq, min_sc, min_tip_q);
+			printf("%s\t%d\t.\t%c\t<%s>\t30\t%s\tSVTYPE=%s;END=%d;SVLEN=%d;QGAP=%d;MINMAPQ=%d;MINSC=%d;MINTIPQ=%d;CONTIGID=%s\n", h->target_name[q->tid],
+					max_start+1, toupper(ref[0]), type_str, min_tip_q < o->min_tip_q? "LowSupp" : ".", type_str, max_end, len, qgap, min_mapq, min_sc, min_tip_q,name);
 		} else {
 			int dir = (p->flag&16)? '[' : ']';
 			char *ref = fai ? faidx_fetch_seq(fai, h->target_name[q->tid], qt_end, qt_end, &rlen) : "N";
@@ -120,14 +126,15 @@ static void print_break_points(int n_aa, aln_t *aa, const cmdopt_t *o, const bam
 			printf("%s\t%d\t.\t%c\t", h->target_name[q->tid], qt_end + 1, toupper(ref[0]));
 			if (q->flag&16) printf("%c%s:%d%c%c", dir, h->target_name[p->tid], pt_start + 1, dir, toupper(join[0]));
 			else printf("%c%c%s:%d%c", toupper(join[0]), dir, h->target_name[p->tid], pt_start + 1, dir);
-			printf("\t30\t%s\tSVTYPE=COMPLEX;QGAP=%d;MINMAPQ=%d;MINSC=%d;MINTIPQ=%d\n",
-					min_tip_q < o->min_tip_q? "LowSupp" : ".", qgap, min_mapq, min_sc, min_tip_q);
+			printf("\t30\t%s\tSVTYPE=COMPLEX;QGAP=%d;MINMAPQ=%d;MINSC=%d;MINTIPQ=%d;CONTIGID=%s\n",
+					min_tip_q < o->min_tip_q? "LowSupp" : ".", qgap, min_mapq, min_sc, min_tip_q,name);
 		}
 	}
 }
 
 static void analyze_aln(int n_aa, aln_t *aa, stat_t *s, const cmdopt_t *o, const bam_hdr_t *h, const char *name, faidx_t *fai)
 {
+	//printf("%s\n",name);
 	int n_tmp, i;
 	aln_t *p, *tmp = 0;
 	// if asked to print break points only
@@ -269,6 +276,7 @@ int main_abreak(int argc, char *argv[])
 		printf("##INFO=<ID=MINMAPQ,Number=1,Type=Integer,Description=\"Min flanking mapping quality\">\n");
 		printf("##INFO=<ID=MINSC,Number=1,Type=Integer,Description=\"Min flanking alignment score\">\n");
 		printf("##INFO=<ID=MINTIPQ,Number=1,Type=Integer,Description=\"Min quality/depth flanking the break point\">\n");
+		printf("##INFO=<ID=CONTIGID,Number=1,Type=String,Description=\"ID of the contig\">\n");
 		printf("##FILTER=<ID=LowSupp,Description=\"MINTIPQ < %d\">\n", o.min_tip_q);
 		printf("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n");
 	}
