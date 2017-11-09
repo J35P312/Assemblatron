@@ -31,7 +31,14 @@ optional parameters:
 note: assemblatron is a prototype software.
 
 #Algorithm
+
 A wrapper around a slighly modified version of htsbox.
 
 #Future additions
+
 A variant imputation function will be added
+
+#De novo assembly
+
+Assemblatron has been tested using 10X supernova output, the "raw" fasta file has been found to give the best results (high sensitivity).
+

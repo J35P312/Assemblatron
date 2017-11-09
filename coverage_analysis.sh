@@ -2,7 +2,7 @@
 #first argument bam file of aligned contigs
 #second argument - a gene list
 #third argument output prefix
-#requires bedtools and tiddit =P
+#requires bedtools and tiddit
 
 TIDDIT_path=/home/jesper/Assemblatron/TIDDIT/bin/TIDDIT
 
