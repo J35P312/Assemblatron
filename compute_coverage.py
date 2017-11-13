@@ -1,6 +1,6 @@
 import sys
 import numpy
-#first argument input coverage file from TIDDIT --cov
+#first argument bam file
 bin_size=50
 genome=[]
 for line in open(sys.argv[1]):

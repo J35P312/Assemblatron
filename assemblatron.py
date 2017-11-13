@@ -60,17 +60,24 @@ def report_splits(bam,working_dir,args):
     for line in output:
         if line[0] == "#":
             if "##FILTER" in line:
+                f.write("##FILTER=<ID=MinQ,Description=\"minimum quality less than {}\">\n".format(args.q))
+                f.write("##FILTER=<ID=HighCoverage,Description=\"coverage exceeding {}\">\n".format(args.max_coverage))
+            else:
                 f.write(line)
-                f.write("FILTER=<ID=HighCoverage,Description=\"coverage exceeding {}\">\n".args.max_coverge)
             continue
         content=line.strip().split()
         chrA=content[0]
         posA=int(math.floor(int(content[1])/100.0))
 
         rA= coverage_data[chrA][posA-1:posA+2]
+        quality=int(line.split("MINMAPQ=")[-1].split(";")[0])
         if len(rA):
             if max(rA) > args.max_coverage:
                 content[6]="HighCoverage"
+            elif quality < args.q:
+                content[6]="MinQ"                
+            else:
+                content[6]="PASS"          
 
         if "<" in content[4]:
             chrB=chrA
@@ -94,15 +101,14 @@ def find_splits(bam,working_dir,args):
     bam_prefix=bam.split("/")[-1]
     prefix=working_dir + "/" +  bam_prefix[0:-4]
     found = False
-    os.system("samtools view -h -q {} -F 4 {} | grep -E \"@|SA:\"  > {}_splits.sam".format(args.q,bam,prefix))
+    os.system("samtools view -h -F 4 {} | grep -E \"@|SA:\"  > {}_splits.sam".format(args.q,bam,prefix))
     output=[]
     for line in open('{}_splits.sam'.format(prefix)):
         if line[0] == "@":
             output.append(line)
             continue
         content=line.strip().split()
-        if len(content[9]) > args.len_aln:
-            output.append(line)
+        output.append(line)
 
 
     f=open('{}_splits.sam'.format(prefix),"w")
@@ -117,17 +123,17 @@ def find_splits(bam,working_dir,args):
     return found
     
 def compute_coverage(args):
-    
+    wd= os.path.dirname(os.path.realpath(__file__))
     bam_prefix=args.bam.split("/")[-1]
     prefix=args.working_dir + "/" +  bam_prefix[0:-4]
-    os.system("python {} --cov -b {} -o {} -z 100 ".format(args.TIDDIT,args.bam,prefix))
+    #os.system("{}/TIDDIT/bin/TIDDIT --cov -b {} -o {} -z 100 ".format(wd,args.bam,prefix))
 
 
 def main(args):
     if not os.path.isdir( args.working_dir ):
         os.makedirs( args.working_dir )
-    found=find_splits(args.bam,args.working_dir,args)
-    #found=True
+    #found=find_splits(args.bam,args.working_dir,args)
+    found=True
     if found:
         compute_coverage(args)
         report_splits(args.bam,args.working_dir,args)
@@ -141,11 +147,10 @@ parser = argparse.ArgumentParser("""Assemblatron - a variant caller using aligne
 parser.add_argument('--working_dir',default="work",type=str, help="temporary analysis files will be stored here(default=work)")
 parser.add_argument('--bam',required = True,type=str, help="input bam")
 parser.add_argument('--ref',required = True,type=str, help="reference fasta")
-parser.add_argument('--q',type=int, default =0, help="minimum allowed mapping quality(default = 0)", required=False)
+parser.add_argument('--q',type=int, default =10 ,help="minimum allowed mapping quality(default = 10)", required=False)
 parser.add_argument('--len_ctg'       ,type=int, default = 1000, help="minimum contig length(default = 1000)", required=False)
 parser.add_argument('--max_coverage'       ,type=int, default = 8, help="calls from regions exceeding the maximum coverage are filtered", required=False)
-parser.add_argument('--min_size'       ,type=int, default = 100, help="minimum variant size)", required=False)
-parser.add_argument('--TIDDIT'       ,type=str, default = "~/TIDDIT/TIDDIT.py" , help="path to TIDDIT.py script)", required=False)    
+parser.add_argument('--min_size'       ,type=int, default = 100, help="minimum variant size)", required=False)  
 args= parser.parse_args()
 main(args)
 
