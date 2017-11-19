@@ -30,15 +30,15 @@ def report_splits(bam,working_dir,args):
     os.system("{}/htsbox/htsbox abreak -b {}_splits.bam -c -f {} > {}_raw.vcf".format(wd,prefix,args.ref,prefix))
     contig_length={}
     mapQ={}
-    for line in open('{}_splits.sam'.format(prefix)):
-        if line[0] == "@":
-            continue
-        content=line.strip().split()
-        if not content[0] in contig_length:
-            contig_length[content[0]]=0
-        length=len(content[9])
-        if length > contig_length[content[0]]:
-            contig_length[content[0]]=length
+
+    with os.popen("samtools view {}_splits.bam".format(prefix)) as pipe:
+        for line in pipe:
+            content=line.strip().split()
+            if not content[0] in contig_length:
+                contig_length[content[0]]=0
+            length=len(content[9])
+            if length > contig_length[content[0]]:
+                contig_length[content[0]]=length
 
     
 
@@ -101,23 +101,8 @@ def find_splits(bam,working_dir,args):
     bam_prefix=bam.split("/")[-1]
     prefix=working_dir + "/" +  bam_prefix[0:-4]
     found = False
-    os.system("samtools view -h -F 4 {} | grep -E \"@|SA:\"  > {}_splits.sam".format(args.q,bam,prefix))
-    output=[]
-    for line in open('{}_splits.sam'.format(prefix)):
-        if line[0] == "@":
-            output.append(line)
-            continue
-        content=line.strip().split()
-        output.append(line)
-
-
-    f=open('{}_splits.sam'.format(prefix),"w")
-    for line in output:
-        f.write(line)
-    f.close()
-
-    os.system("samtools view -h -Shb {}_splits.sam | samtools sort -n - {}_splits".format(prefix,prefix))
-    if os.path.getsize( '{}_splits.sam'.format(prefix) ):
+    os.system("samtools view -q {} -h -F 4 {} | grep -E \"@|SA:\"  | samtools view -Shb -@ args.cores - | samtools sort -n -@ {} - {}_splits".format(args.q,bam,args.cores,args.cores,prefix))
+    if os.path.getsize( '{}_splits.bam'.format(prefix) ):
         found = True
 
     return found
@@ -126,14 +111,14 @@ def compute_coverage(args):
     wd= os.path.dirname(os.path.realpath(__file__))
     bam_prefix=args.bam.split("/")[-1]
     prefix=args.working_dir + "/" +  bam_prefix[0:-4]
-    #os.system("{}/TIDDIT/bin/TIDDIT --cov -b {} -o {} -z 100 ".format(wd,args.bam,prefix))
+    os.system("{}/TIDDIT/bin/TIDDIT --cov -b {} -o {} -z 100 ".format(wd,args.bam,prefix))
 
 
 def main(args):
     if not os.path.isdir( args.working_dir ):
         os.makedirs( args.working_dir )
-    #found=find_splits(args.bam,args.working_dir,args)
-    found=True
+    found=find_splits(args.bam,args.working_dir,args)
+    #found=True
     if found:
         compute_coverage(args)
         report_splits(args.bam,args.working_dir,args)
@@ -151,6 +136,7 @@ parser.add_argument('--q',type=int, default =10 ,help="minimum allowed mapping q
 parser.add_argument('--len_ctg'       ,type=int, default = 1000, help="minimum contig length(default = 1000)", required=False)
 parser.add_argument('--max_coverage'       ,type=int, default = 8, help="calls from regions exceeding the maximum coverage are filtered", required=False)
 parser.add_argument('--min_size'       ,type=int, default = 100, help="minimum variant size)", required=False)  
+parser.add_argument('--cores'       ,type=int, default = 8, help="number of cores", required=False)  
 args= parser.parse_args()
 main(args)
 
