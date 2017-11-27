@@ -31,6 +31,8 @@ def report_splits(bam,working_dir,args):
     contig_length={}
     mapQ={}
 
+    cigarOP={}
+    cigarList=[]
     with os.popen("samtools view {}_splits.bam".format(prefix)) as pipe:
         for line in pipe:
             content=line.strip().split()
@@ -39,10 +41,14 @@ def report_splits(bam,working_dir,args):
             length=len(content[9])
             if length > contig_length[content[0]]:
                 contig_length[content[0]]=length
-
+            if not content[0] in cigarOP:
+                cigarOP[content[0]] = []
+            else:
+                cigarList.append(content[5])
     
 
     output=[]
+    i=0
     for line in open("{}_raw.vcf".format(prefix)):
         if line[0] == "#":
             output.append(line)
@@ -53,7 +59,11 @@ def report_splits(bam,working_dir,args):
         if "SVLEN=" in line:
             if args.min_size > int(line.split("SVLEN=")[-1].split(";")[0]):
                 continue
-        output.append(line)        
+        content=line.strip().split()
+        info=content[7]+";CIGAR={}".format(cigarList[i])
+        content[7] = info
+        output.append("\t".join(content) + "\n")        
+        i+=1
 
     coverage_data=coverage(args)
     f=open("{}_raw.vcf".format(prefix),"w")
@@ -62,6 +72,8 @@ def report_splits(bam,working_dir,args):
             if "##FILTER" in line:
                 f.write("##FILTER=<ID=MinQ,Description=\"minimum quality less than {}\">\n".format(args.q))
                 f.write("##FILTER=<ID=HighCoverage,Description=\"coverage exceeding {}\">\n".format(args.max_coverage))
+            if "##INFO=<ID=SVTYPE," in line:
+                f.write("##INFO=<ID=CIGAR,Number=1,Type=String,Description=\"The cigar operation\">\n")
             else:
                 f.write(line)
             continue
@@ -101,10 +113,12 @@ def find_splits(bam,working_dir,args):
     bam_prefix=bam.split("/")[-1]
     prefix=working_dir + "/" +  bam_prefix[0:-4]
     found = False
-    os.system("samtools view -q {} -h -F 4 {} | grep -E \"@|SA:\"  | samtools view -Shb -@ args.cores - | samtools sort -n -@ {} - {}_splits".format(args.q,bam,args.cores,args.cores,prefix))
-    if os.path.getsize( '{}_splits.bam'.format(prefix) ):
-        found = True
-
+    os.system("samtools view -q {} -h -F 4 {} | grep -E \"@|SA:\"  | samtools view -Shb -@ {} - | samtools sort -n -@ {} - {}_splits".format(args.q,bam,args.cores,args.cores,prefix))
+    try:
+        if os.path.getsize( '{}_splits.bam'.format(prefix) ):
+           found = True
+    except:
+        found= False 
     return found
     
 def compute_coverage(args):
