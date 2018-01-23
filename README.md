@@ -30,11 +30,11 @@ optional parameters:
  
 note: assemblatron is a prototype software.
 
-#Algorithm
+# Algorithm
 
 A wrapper around a slighly modified version of htsbox.
 
-#other scripts
+# Other scripts
 
 compute_coverage.py
     
@@ -76,7 +76,7 @@ bam2fq.sh
         ./bam2fq.sh input.bam > output.fastq
 
     
-#De novo assembly
+# De novo assembly
 
 Assemblatron has been tested using 10X supernova output, the "raw" fasta file has been found to give the best results (high sensitivity).
 The aligned FermiKit  output works well with Assemblatron aswell. Such file can be created using FermiKit or the runFermi.py wrapper
