@@ -113,7 +113,7 @@ def find_splits(bam,working_dir,args):
     bam_prefix=bam.split("/")[-1]
     prefix=working_dir + "/" +  bam_prefix[0:-4]
     found = False
-    os.system("samtools view -q {} -h -F 4 {} | grep -E \"@|SA:\"  | samtools view -Shb -@ {} - | samtools sort -n -@ {} - {}_splits".format(args.q,bam,args.cores,args.cores,prefix))
+    os.system("samtools view -q {} -h -F 4 {} | grep -E \"@|SA:\"  | samtools view -Shb -@ {} - | samtools sort -n -@ {} - > {}_splits.bam".format(args.q,bam,args.cores,args.cores,prefix))
     try:
         if os.path.getsize( '{}_splits.bam'.format(prefix) ):
            found = True
