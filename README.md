@@ -51,13 +51,9 @@ compute_N50.py
     compute the N50 of an assembly:
         compute_N50.py input.fa
 
-contigSupport.py
-	accepts contigs in fasta or bam format(suffix, bam,fasta, or fa), as well as reads in fastq or bam format(suffix: bam, fastq, or fq). The reads are mapped to the contigs, and three files are produced (based on --prefix)
-	
-	prefix.bam - a bam file with the results of mapping the reads to the contigs
-	prefix.tab - the coverage across bins on the contigs
-	prefix.stats - per contig statistics and dataset statistics
+contig_aln.py
 
+Align reads to contigs. The resulting bam file  may be used for scaffolfing
 
 	
  
@@ -65,10 +61,6 @@ runFermi.py
     run the fermi assembler and align the contigs to the reference genome:
         python runFermi.py --ref reference.fasta --fastq input.fastq --prefix prefix
     fermikit is assumed to be installed in the Assemblatron folder, if this is not the case, you need to change the fermi variable in the runFermi script
-    alternatively, the pipeline can
-
-    runFermi.py will not apply any error correction of the reads, nor any trimming. By skipping these steps, the run time is greatly reduced. Additionally, the settings are less stringent compared to standard fermikit.
-    runfermi.py will not perform any variant calling: the end result is a bam file.
  
 bam2fq.sh
     convert a bam file to fastq using samtools. the pipeline removes duplicates, supplementary alignments and non-primary alignments.
