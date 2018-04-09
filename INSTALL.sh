@@ -14,3 +14,5 @@ cmake ..
 make
 cd ..
 cd ..
+
+pip install BESST

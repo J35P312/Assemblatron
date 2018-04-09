@@ -1,67 +1,82 @@
-# Assemblatron - De novo assembly structural variant analysis toolkit
+# Assemblatron - De novo assembly tool kit
 
-Assemblatron is a toolkit for evaluating De novo assemblies and performing SV calling.
+Assemblatron is a toolkit for De novo assembly, scaffolding, and variant calling of de  novo assemblies.  type 
+	python assemblatron.py --help
 
-# install
+For a help message of the avialable tools. The full workflow involves:
+
+1: assembly using Fermi2
+
+2: scaffolding using BESST (using the same input data as for 1, or a mate pair library)
+
+3: alignment of the contigs
+
+4: compute assembly statistics
+
+5: variant calling
+
+# Install
 
 run the install script:
 ./INSTALL.sh
-The install script will download and install fermikit and tiddit. and install the local copy of htslib
+The install script will download and install BESST, fermikit, and tiddit. and install the local copy of htslib
 
 Dependencies:
 	svdb
 	vcftools
 	samtools
 	python 2.7
+	bwa
 
+# Assemble
+Assemblatron performs de novo assembly using a pipeline similar fermikit fermikit. The pipeline is run through the following commands:
 
-# Call SV
+		python assemblatron.py --assemble --fastq <input.fastq> --prefix <prefix>
 
-1: align the contigs using bwa mem:
-        bwa mem -x intractg  reference.fasta contigs.fa | samtools view -bhS - > contigs.bam
+You may also align the contigs to the reference genome:
 
-2: perform variant calling
-        
-    python assemblatron.py --bam contigs.bam --ref reference.fasta > calls.vcf
+		python assemblatron.py --assemble --ref <reference.fasta> --fastq <input.fastq> --prefix <prefix> --align
 
-The output file is a vcf, variants are returned as inversion or breakend variant. Assemblatron detects variants of any size and type.
-optional parameters:
+Type help for more  info:
 
-  --working_dir WORKING_DIR temporary analysis files will be stored here(default=work)
-  --bam BAM             input bam
-  --q Q                 minimum allowed mapping quality(default = 10)
-  --len LEN             minimum length of alignments(default = 200)
-  --len_ctg LEN_CTG     minimum contig length(default = 1000)
-  --max_dist MAX_DIST   maximum distance of two breakpoints within a contig(default = 100)
+		 python assemblatron.py --assemble --help
+
+The main difference between Fermikit and Assemblatron assemble is the default parameters. Additionally, Assemblatron uses piping more  extensively to reduce the writing/reading to disk.
+For more info on Fermikit, visit the Fermikit website:
+
+		https://github.com/lh3/fermikit
+
+# Scaffolfing
+
+Perform Scaffolding using BESST. 
+
+		python assemblatron.py scaffold --contigs <contigs> --fastq <fastq> --output <output> --tmpdir
+	
+Where <Contigs> is a fasta file containing the contigs produced through de novo assembly, and <fastq> is a fastq file containing paired-end reads. The scaffolding process including alignment takes about 24-48 hours on a 16 core machine when using a 30X whole genome for scaffolding.
+When running BESST on the assemblatron output contigs, the N50 is usually improved by a factor of 10 or so.
+
+# Align
+
+# Stats
+compute various statistics of an assembly.
+
+python assemblatron.py --stats <contigs_bam>
+	
+The statistics include N50, L50, assembly size, and the number of contigs.
+
+# SV
+
+# SNV
+
+# Conversion
+
+# Cite
+Cite the components that you used, as well as the Assemblatron git hub page.
  
-The variants are called using a slighlty modified version of HTSBOX.
+	If you performed De novo assembly, cite the FermiKit paper:
 
-# statistics
+		https://github.com/lh3/fermikit
 
-compute_stats.py
-    
-    compute various statistics of an assembly.:
-        compute_N50.py contigs.bam
+	If you performed scaffolding, please cite the BESST paper:
 
-    The statistics include N50, L50, assembly size, and the number of contigs.
-
-
-# De novo assembly and alignment
-
-runFermi.py
-
-    run the fermi assembler and align the contigs to the reference genome:
-        python runFermi.py --ref reference.fasta --fastq input.fastq --prefix prefix
-
-contigAln.py
-
-	Align reads to contigs. The resulting bam file may be used for scaffolfing.
-
-# Misc
-
-bam2fq.sh
-
-    convert a bam file to fastq using samtools. the pipeline removes duplicates, supplementary alignments and non-primary alignments.
-
-        ./bam2fq.sh input.bam > output.fastq
-
+		https://github.com/ksahlin/BESST
