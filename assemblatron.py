@@ -63,7 +63,7 @@ def assemble(args,wd):
 	if not args.align:
 		os.system("{}/fermi2 simplify -CSo 66 -m {} -T 61 {}.pre.gz 2>  {}.mag.gz.log > {}.fasta".format(fermi,args.m,args.prefix,args.prefix, args.prefix))
 	else:
-		os.system("bwa mem -X intractg -t {} {} {}.fasta | samtools view -Sbh - | samtools sort -m {} - > {}.bam".format(args.cores,args.ref,args.prefix,args.mem,args.prefix))
+		os.system("bwa mem -X intractg -t {} {} {}.fasta | samtools view -Sbh - | samtools sort -m {}G - > {}.bam".format(args.cores,args.ref,args.prefix,args.mem,args.prefix))
 		os.system("samtools index {}.bam".format(args.prefix) )
 
 version = "0.0.0"
@@ -133,7 +133,7 @@ elif args.align:
 	parser.add_argument('--prefix',required = True,type=str, help="output prefix")
 	args= parser.parse_args()
 
-	os.system("bwa mem -X intractg -t {} {} {} | samtools view -Sbh - | samtools sort -m {} - > {}.bam".format(args.cores,args.ref,args.contigs,args.mem,args.prefix))
+	os.system("bwa mem -X intractg -t {} {} {} | samtools view -Sbh - | samtools sort -m {}G - > {}.bam".format(args.cores,args.ref,args.contigs,args.mem,args.prefix))
 	os.system( "samtools index {}.bam".format(args.prefix) )
 	
 elif args.fasta:
@@ -170,7 +170,7 @@ elif args.scaffold:
 
 	os.system("mkdir -p {}".format(args.output))
 	os.system("bwa index {}".format(args.contigs))
-	os.system("bwa mem -p -t {} {} {} | samtools view -Sbh - | samtools sort -@ {} -m {} - > {}".format(args.cores,args.contigs,args.fastq,args.cores,args.mem,args.bam))
+	os.system("bwa mem -p -t {} {} {} | samtools view -Sbh - | samtools sort -@ {} -m {}G - > {}".format(args.cores,args.contigs,args.fastq,args.cores,args.mem,args.bam))
 
 	if args.rf:
 		os.system("runBESST -c {} -f {} -orientation rf -o {}".format(args.contigs,args.bam,args.output))

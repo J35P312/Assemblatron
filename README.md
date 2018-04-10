@@ -60,6 +60,9 @@ When running BESST on the assemblatron output contigs, the N50 is usually improv
 # Align
 Assemblatron performs alignment using bwa mem. The output is printed to a file named <prefix.bam>. The input is asssumed to be contigs produced through any assembly process.
 
+	python assemblatron.py --align --ref <reference.fasta> --contigs <contigs.fasta> --prefix <prefix>
+
+A bam file named <prefix>.bam will be produced
 
 # Stats
 compute various statistics of an assembly. THe output is printed to stdout.
@@ -71,8 +74,12 @@ The statistics include N50, L50, assembly size, and the number of contigs.
 # SV
 Call SV using HTSbox abreak
 
+The output is  printed to stdout
+
 # SNV
 Call indels and SNV using samtools pipelup/bcftools call
+
+the  output is printed to stdout
 
 # Conversion
 
@@ -80,6 +87,8 @@ Call indels and SNV using samtools pipelup/bcftools call
 
 
 	bam to fasta
+
+The output is  printed to stdout
 
 # Cite
 Cite the components that you used, as well as the Assemblatron git hub page.
