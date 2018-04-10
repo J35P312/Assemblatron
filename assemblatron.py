@@ -16,12 +16,13 @@ def assembly_stats(args):
 		for line in pipe:
 			if line[0] == "#":
 				continue
-		content= line.strip().split()
-		if float(content[-2]) == 0:
-			uncovered+=100
-		else:
-			covered+=100
-		total+=100
+			content= line.strip().split()
+			if float(content[-2]) == 0:
+				uncovered+=100
+			else:
+				covered+=100
+			total+=100
+
 	contig_sizes=[]
 	contig_size=0
 

@@ -3,7 +3,11 @@
 Assemblatron is a toolkit for De novo assembly, scaffolding, and variant calling of de  novo assemblies.  type 
 	python assemblatron.py --help
 
-For a help message of the avialable tools. The full workflow involves:
+For a help message of the avialable tools. 
+
+# The workflow 
+
+The full workflow involves:
 
 1: assembly using Fermi2
 
@@ -14,6 +18,11 @@ For a help message of the avialable tools. The full workflow involves:
 4: compute assembly statistics
 
 5: variant calling
+
+The assemblatron workflow is run through the following commands:
+
+
+
 
 # Install
 
@@ -76,19 +85,47 @@ Call SV using HTSbox abreak
 
 The output is  printed to stdout
 
+other options:
+  -h, --help            show this help message and exit
+  --sv                  call SV from the aligned contigs
+  --working_dir WORKING_DIR
+                        temporary analysis files will be stored
+                        here(default=work)
+  --bam BAM             input bam (contigs)
+  --ref REF             reference fasta
+  --q Q                 minimum allowed mapping quality(default = 10)
+  --len_ctg LEN_CTG     minimum contig length(default = 500)
+  --max_coverage MAX_COVERAGE
+                        calls from regions exceeding the maximum coverage are
+                        filtered
+  --min_size MIN_SIZE   minimum variant size)
+  --cores CORES         number of cores
+
 # SNV
 Call indels and SNV using samtools pipelup/bcftools call
 
 the  output is printed to stdout
 
-# Conversion
+other options:
 
-	bam to fastq
+  -h, --help  show this help message and exit
+  --bam BAM   input bam (contigs)
+  --ref REF   reference fasta
 
+# fastq
 
-	bam to fasta
+convert a bam file to fastq.
 
-The output is  printed to stdout
+	python assemblatron.py --fastq <input.bam>
+
+The output is  printed to stdout.
+
+# fasta
+Convert a contig bam file to fasta.
+
+	python assemblatron.py --fastq <contigs.bam>
+
+The output is  printed to stdout.
 
 # Cite
 Cite the components that you used, as well as the Assemblatron git hub page.
