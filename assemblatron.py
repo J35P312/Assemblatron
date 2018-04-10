@@ -83,7 +83,7 @@ if args.assemble:
 
 	parser = argparse.ArgumentParser("""Assemblatron assemble - a wrapper for the fermi assembler""")
 	parser.add_argument('--assemble'       , help="Perform de novo assembly using the Fermi2 assembler", required=False, action="store_true")
-	parser.add_argument('--fastq',type=str, help="input fastq")
+	parser.add_argument('--fastq',required = True, type=str, help="input fastq")
 	parser.add_argument('--prefix',required = True,type=str, help="prefix of the output files")
 	parser.add_argument('--cores',type=int, default =16, help="number of cores (default = 16)")
 	parser.add_argument('--batch',type=str, default ="20g", help="batch size for multi-string indexing; 0 for single-string (default=20g)")
@@ -96,6 +96,8 @@ if args.assemble:
 
 	if not args.align or (args.align and args.ref):
 		assemble(args,wd)
+	elif args.align and not args.ref:
+		print ("you need a reference to align the contigs: Please supply the reference path through the --ref parameter")
 
 elif args.sv:
 

@@ -37,6 +37,8 @@ You may also align the contigs to the reference genome:
 
 		python assemblatron.py --assemble --ref <reference.fasta> --fastq <input.fastq> --prefix <prefix> --align
 
+Pe default, the Assembly module will generate an output file named <prefix>.fasta. If asssemblatron was run with the --align option, a bam file named <prefix>.bam will be produced as well.
+
 Type help for more  info:
 
 		 python assemblatron.py --assemble --help
@@ -56,19 +58,28 @@ Where <Contigs> is a fasta file containing the contigs produced through de novo 
 When running BESST on the assemblatron output contigs, the N50 is usually improved by a factor of 10 or so.
 
 # Align
+Assemblatron performs alignment using bwa mem. The output is printed to a file named <prefix.bam>. The input is asssumed to be contigs produced through any assembly process.
+
 
 # Stats
-compute various statistics of an assembly.
+compute various statistics of an assembly. THe output is printed to stdout.
 
 python assemblatron.py --stats <contigs_bam>
 	
 The statistics include N50, L50, assembly size, and the number of contigs.
 
 # SV
+Call SV using HTSbox abreak
 
 # SNV
+Call indels and SNV using samtools pipelup/bcftools call
 
 # Conversion
+
+	bam to fastq
+
+
+	bam to fasta
 
 # Cite
 Cite the components that you used, as well as the Assemblatron git hub page.
