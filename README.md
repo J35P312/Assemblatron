@@ -31,11 +31,13 @@ run the install script:
 The install script will download and install BESST, fermikit, and tiddit. and install the local copy of htslib
 
 Dependencies:
+
 	svdb
 	vcftools
 	samtools
 	python 2.7
 	bwa
+	minimap2
 
 # Assemble
 Assemblatron performs de novo assembly using a pipeline similar fermikit fermikit. The pipeline is run through the following commands:

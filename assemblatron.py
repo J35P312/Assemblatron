@@ -61,10 +61,10 @@ def assemble(args,wd):
 	os.system("{} | {}".format(bfc,ropebwt))
 	#assemble
 	os.system( "{}/fermi2 assemble -l {} -m {} -t {} {}.fmd 2> {}.pre.gz.log | gzip -1 > {}.pre.gz".format(fermi,args.l,args.m,args.cores,args.prefix,args.prefix,args.prefix) )
-	if not args.align:
-		os.system("{}/fermi2 simplify -CSo 66 -m {} -T 61 {}.pre.gz 2>  {}.mag.gz.log > {}.fasta".format(fermi,args.m,args.prefix,args.prefix, args.prefix))
-	else:
-		os.system("bwa mem -X intractg -t {} {} {}.fasta | samtools view -Sbh - | samtools sort -m {}G - > {}.bam".format(args.cores,args.ref,args.prefix,args.mem,args.prefix))
+	os.system("{}/fermi2 simplify -CSo 66 -m {} -T 61 {}.pre.gz 2>  {}.mag.gz.log > {}.fasta".format(fermi,args.m,args.prefix,args.prefix, args.prefix))
+
+	if args.align:
+		os.system("bwa mem -x intractg -t {} {} {}.fasta | samtools view -Sbh - | samtools sort -m 2G - > {}.bam".format(args.cores,args.ref,args.prefix,args.prefix))
 		os.system("samtools index {}.bam".format(args.prefix) )
 
 version = "0.0.0"
@@ -128,13 +128,13 @@ elif args.align:
 	parser = argparse.ArgumentParser("""Assemblatron align - align contigs to the reference using bwa mem""")
 	parser.add_argument('--align'          , help="align contigs to reference using bwa mem", required=False, action="store_true")
 	parser.add_argument('--ref',required = True,type=str, help="reference fasta")
-	parser.add_argument('--mem'      , help="maximum  mempry per thread (gigabytes)", type=int, default=4)
+	parser.add_argument('--mem'      , help="maximum  mempory per thread (gigabytes)", type=int, default=2)
 	parser.add_argument('--cores'       ,type=int, default = 8, help="number of cores (default = 2)", required=False)
 	parser.add_argument('--contigs',required = True,type=str, help="input contigs")
 	parser.add_argument('--prefix',required = True,type=str, help="output prefix")
 	args= parser.parse_args()
 
-	os.system("bwa mem -X intractg -t {} {} {} | samtools view -Sbh - | samtools sort -m {}G - > {}.bam".format(args.cores,args.ref,args.contigs,args.mem,args.prefix))
+	os.system("bwa mem -x intractg -t {} {} {} | samtools view -Sbh - | samtools sort -m {}G - > {}.bam".format(args.cores,args.ref,args.contigs,args.mem,args.prefix))
 	os.system( "samtools index {}.bam".format(args.prefix) )
 	
 elif args.fasta:
