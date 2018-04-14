@@ -3,7 +3,7 @@
 Assemblatron is a toolkit for De novo assembly, scaffolding, and variant calling of de  novo assemblies.  type 
 	python assemblatron.py --help
 
-For a help message of the avialable tools. 
+For a help message of the avialable tools.
 
 # The workflow 
 
@@ -19,25 +19,21 @@ The full workflow involves:
 
 5: variant calling
 
+However, you may start or end the analysis as any step.
 The assemblatron workflow is run through the following commands:
-
-
-
 
 # Install
 
 run the install script:
 ./INSTALL.sh
-The install script will download and install BESST, fermikit, and tiddit. and install the local copy of htslib
+The install script will download and install BESST, fermikit, svdb and tiddit. and install the local copy of htslib
 
 Dependencies:
 
-	svdb
 	vcftools
 	samtools
 	python 2.7
 	bwa
-	minimap2
 
 # Assemble
 Assemblatron performs de novo assembly using a pipeline similar fermikit fermikit. The pipeline is run through the following commands:
@@ -83,7 +79,9 @@ python assemblatron.py --stats <contigs_bam>
 The statistics include N50, L50, assembly size, and the number of contigs.
 
 # SV
-Call SV using HTSbox abreak
+Call SV using HTSbox abreak. Assemblatron adds additional filters and information to the HTSbox vcf.
+
+    python assemblatron.py --sv --bam <contigs.bam> --ref <reference.fasta> > out.vcf
 
 The output is  printed to stdout
 
@@ -128,6 +126,13 @@ Convert a contig bam file to fasta.
 	python assemblatron.py --fastq <contigs.bam>
 
 The output is  printed to stdout.
+
+# Testing
+De novo assembly of NA12878 may be  downloaded from the 10X website:
+
+Start by aligning the contigs using the align module, thereafter you may call SV and SNV using the sv and snv modules. Truthsets are available at the GIAB  website:
+
+As well as through the SV classify supplementary methods:
 
 # Cite
 Cite the components that you used, as well as the Assemblatron git hub page.

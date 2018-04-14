@@ -108,9 +108,10 @@ elif args.sv:
 	parser.add_argument('--bam',required = True,type=str, help="input bam (contigs)")
 	parser.add_argument('--ref',required = True,type=str, help="reference fasta")
 	parser.add_argument('--q',type=int, default =10 ,help="minimum allowed mapping quality(default = 10)", required=False)
-	parser.add_argument('--len_ctg'       ,type=int, default = 500, help="minimum contig length(default = 500)", required=False)
+	parser.add_argument('--len_ctg'       ,type=int, default = 100, help="minimum contig length(default = 100)", required=False)
 	parser.add_argument('--max_coverage'       ,type=int, default = 8, help="calls from regions exceeding the maximum coverage are filtered", required=False)
 	parser.add_argument('--min_size'       ,type=int, default = 100, help="minimum variant size)", required=False)  
+        parser.add_argument('--sample'       ,type=str, default = "Bob", help="sample id, as shown in the format column (default=Bob)", required=False)
 	parser.add_argument('--cores'       ,type=int, default = 8, help="number of cores", required=False)  
 	args= parser.parse_args()
 
@@ -172,6 +173,7 @@ elif args.scaffold:
 	os.system("mkdir -p {}".format(args.output))
 	os.system("bwa index {}".format(args.contigs))
 	os.system("bwa mem -p -t {} {} {} | samtools view -Sbh - | samtools sort -@ {} -m {}G - > {}".format(args.cores,args.contigs,args.fastq,args.cores,args.mem,args.bam))
+	os.system("samtools index {}".format(args.bam))
 
 	if args.rf:
 		os.system("runBESST -c {} -f {} -orientation rf -o {}".format(args.contigs,args.bam,args.output))

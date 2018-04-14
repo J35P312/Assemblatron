@@ -1,8 +1,11 @@
 git clone --recursive https://github.com/lh3/fermikit.git
 cd fermikit
+make clean
 make
 cd ..
+
 cd htsbox
+make clean
 make
 cd ..
 
@@ -16,3 +19,7 @@ cd ..
 cd ..
 
 pip install BESST
+git clone https://github.com/J35P312/SVDB.git
+cd SVDB
+pip install -e .
+cd ..

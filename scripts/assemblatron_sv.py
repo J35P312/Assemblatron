@@ -42,27 +42,23 @@ def report_splits(bam,working_dir,args,wd):
                 contig_length[content[0]]=length
             if not content[0] in cigarOP:
                 cigarOP[content[0]] = []
-            else:
-                cigarList.append(content[5])
+            cigarOP[content[0]].append(content[5])
     
-
     output=[]
-    i=0
     for line in open("{}_raw.vcf".format(prefix)):
         if line[0] == "#":
             output.append(line)
             continue
-        contigid=line.split("CONTIGID=")[-1]
-        if contig_length[contigid.strip()] < args.len_ctg:
+        contigid=line.split("CONTIGID=")[-1].strip()
+        if contig_length[contigid] < args.len_ctg:
             continue
         if "SVLEN=" in line:
             if args.min_size > int(line.split("SVLEN=")[-1].split(";")[0]):
                 continue
         content=line.strip().split()
-        info=content[7]+";CIGAR={}".format(cigarList[i])
+        info=content[7]+";CIGAR={}".format( "|".join(cigarOP[contigid]) )
         content[7] = info
         output.append("\t".join(content) + "\n")        
-        i+=1
 
     coverage_data=coverage(args)
     f=open("{}_raw.vcf".format(prefix),"w")
@@ -73,8 +69,11 @@ def report_splits(bam,working_dir,args,wd):
                 f.write("##FILTER=<ID=HighCoverage,Description=\"coverage exceeding {}\">\n".format(args.max_coverage))
             if "##INFO=<ID=SVTYPE," in line:
                 f.write("##INFO=<ID=CIGAR,Number=1,Type=String,Description=\"The cigar operation\">\n")
-            else:
-                f.write(line)
+            if "#CHROM" in line:
+                f.write("##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n")
+                f.write(line.strip()+"\tFORMAT\t{}\n".format(args.sample))
+                continue
+            f.write(line)
             continue
         content=line.strip().split()
         chrA=content[0]
@@ -102,6 +101,9 @@ def report_splits(bam,working_dir,args,wd):
             if max(rB) > args.max_coverage:
                 content[6]="HighCoverage"
 
+        content.append("GT")
+        content.append("./1")
+
         f.write("\t".join(content)+"\n")
     f.close()
 
@@ -112,7 +114,8 @@ def find_splits(bam,working_dir,args):
     bam_prefix=bam.split("/")[-1]
     prefix=working_dir + "/" +  bam_prefix[0:-4]
     found = False
-    os.system("samtools view -q {} -h -F 4 {} | grep -E \"@|SA:\"  | samtools view -Shb -@ {} - | samtools sort -n -@ {} - > {}_splits.bam".format(args.q,bam,args.cores,args.cores,prefix))
+    os.system("samtools view -q {} -h {} | grep -E \"@|SA:\"  | samtools view -Shb -@ {} - | samtools sort -n -@ {} - > {}_splits.bam".format(args.q,bam,args.cores,args.cores,prefix))
+
     try:
         if os.path.getsize( '{}_splits.bam'.format(prefix) ):
            found = True
