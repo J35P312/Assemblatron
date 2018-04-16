@@ -158,6 +158,7 @@ elif args.scaffold:
 	parser.add_argument('--tmpdir'      , help="write reads-to-contig bam to $TMPDIR ", required=False, action="store_true")
 	parser.add_argument('--filename',required = True, help="filename of the output files (default = same as the contigs)")
 	parser.add_argument('--mem'      , help="maximum  mempry per thread (gigabytes)", type=int, default=4)
+        parser.add_argument('--iter'      , help="Number of itterations (default = 500000)", type=int, default=500000)
 	parser.add_argument('--cores'       ,type=int, default = 8, help="number of cores (default = 2)", required=False)
 	args= parser.parse_args()
 
@@ -176,9 +177,9 @@ elif args.scaffold:
 	os.system("samtools index {}".format(args.bam))
 
 	if args.rf:
-		os.system("runBESST -c {} -f {} -orientation rf -o {}".format(args.contigs,args.bam,args.output))
+		os.system("runBESST -c {} -f {} -orientation rf -o {} --iter {}".format(args.contigs,args.bam,args.output,args.iter))
 	else:
-		os.system("runBESST -c {} -f {} -orientation fr -o {}".format(args.contigs,args.bam,args.output))
+		os.system("runBESST -c {} -f {} -orientation fr -o {} --iter {}".format(args.contigs,args.bam,args.output,args.iter))
 	
 elif args.fastq:
 
