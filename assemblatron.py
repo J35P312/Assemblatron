@@ -4,7 +4,7 @@ import argparse
 
 wd=os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, '{}/scripts'.format(wd))
-import assemblatron_sv
+import call
 
 def assembly_stats(args):
 	uncovered=0
@@ -104,18 +104,15 @@ elif args.sv:
 
 	parser = argparse.ArgumentParser("""Assemblatron sv - a variant caller using aligned contigs""")
 	parser.add_argument('--sv'        , help="call SV from the aligned contigs", required=False, action="store_true")
-	parser.add_argument('--working_dir',default="work",type=str, help="temporary analysis files will be stored here(default=work)")
 	parser.add_argument('--bam',required = True,type=str, help="input bam (contigs)")
-	parser.add_argument('--ref',required = True,type=str, help="reference fasta")
 	parser.add_argument('--q',type=int, default =10 ,help="minimum allowed mapping quality(default = 10)", required=False)
-	parser.add_argument('--len_ctg'       ,type=int, default = 100, help="minimum contig length(default = 100)", required=False)
-	parser.add_argument('--max_coverage'       ,type=int, default = 8, help="calls from regions exceeding the maximum coverage are filtered", required=False)
+	parser.add_argument('--len_ctg'       ,type=int, default = 25, help="minimum contig length(default = 100)", required=False)
+	parser.add_argument('--max_coverage'       ,type=int, default = 5, help="calls from regions exceeding the maximum coverage are filtered", required=False)
 	parser.add_argument('--min_size'       ,type=int, default = 100, help="minimum variant size)", required=False)  
-        parser.add_argument('--sample'       ,type=str, default = "Bob", help="sample id, as shown in the format column (default=Bob)", required=False)
-	parser.add_argument('--cores'       ,type=int, default = 8, help="number of cores", required=False)  
+        parser.add_argument('--sample'       ,type=str, help="sample id, as shown in the format column", required=False)
 	args= parser.parse_args()
 
-	assemblatron_sv.main(args,wd)
+	call.main(args)
 
 elif args.stats:
 	parser = argparse.ArgumentParser("""Assemblatron stats - compute assembly stats""")

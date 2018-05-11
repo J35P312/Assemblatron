@@ -4,11 +4,6 @@ make clean
 make
 cd ..
 
-cd htsbox
-make clean
-make
-cd ..
-
 git clone https://github.com/J35P312/TIDDIT.git
 cd TIDDIT
 mkdir build

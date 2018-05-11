@@ -1,1 +1,0 @@
-#define HTSBOX_VERSION "r340"

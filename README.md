@@ -26,8 +26,7 @@ The assemblatron workflow is run through the following commands:
 
 run the install script:
 ./INSTALL.sh
-The install script will download and install BESST, fermikit, svdb and tiddit. and install the local copy of htslib
-
+The install script will download and install BESST, fermikit, and tiddit.
 Dependencies:
 
 	vcftools
@@ -79,27 +78,23 @@ python assemblatron.py --stats <contigs_bam>
 The statistics include N50, L50, assembly size, and the number of contigs.
 
 # SV
-Call SV using HTSbox abreak. Assemblatron adds additional filters and information to the HTSbox vcf.
+Call SV. Assemblatron will calssify variants as DEL, INV, BND (translocation or complex), INS, and TDUP.
 
-    python assemblatron.py --sv --bam <contigs.bam> --ref <reference.fasta> > out.vcf
+    python assemblatron.py --sv --bam <contigs.bam> > out.vcf
 
 The output is  printed to stdout
 
 other options:
   -h, --help            show this help message and exit
   --sv                  call SV from the aligned contigs
-  --working_dir WORKING_DIR
-                        temporary analysis files will be stored
-                        here(default=work)
   --bam BAM             input bam (contigs)
-  --ref REF             reference fasta
   --q Q                 minimum allowed mapping quality(default = 10)
-  --len_ctg LEN_CTG     minimum contig length(default = 500)
+  --len_ctg LEN_CTG     minimum uniquely mapped contig length (default = 25)
   --max_coverage MAX_COVERAGE
+  --sample              sample id (default = bam-filename)
                         calls from regions exceeding the maximum coverage are
                         filtered
-  --min_size MIN_SIZE   minimum variant size)
-  --cores CORES         number of cores
+  --min_size MIN_SIZE   minimum variant size (default=100)
 
 # SNV
 Call indels and SNV using samtools pipelup/bcftools call
