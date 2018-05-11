@@ -9,15 +9,15 @@ For a help message of the avialable tools.
 
 The full workflow involves:
 
-1: assembly using Fermi2
+    1: assembly using Fermi2 (similar to workflow as fermiKit)
 
-2: scaffolding using BESST (using the same input data as for 1, or a mate pair library)
+    2: scaffolding using BESST (using the same input data as for 1, or a mate pair library)
 
-3: alignment of the contigs
+    3: alignment of the contigs
 
-4: compute assembly statistics
+    4: compute assembly statistics
 
-5: variant calling
+    5: variant calling
 
 However, you may start or end the analysis as any step.
 The assemblatron workflow is run through the following commands:
@@ -85,16 +85,17 @@ Call SV. Assemblatron will calssify variants as DEL, INV, BND (translocation or 
 The output is  printed to stdout
 
 other options:
-  -h, --help            show this help message and exit
-  --sv                  call SV from the aligned contigs
-  --bam BAM             input bam (contigs)
-  --q Q                 minimum allowed mapping quality(default = 10)
-  --len_ctg LEN_CTG     minimum uniquely mapped contig length (default = 25)
-  --max_coverage MAX_COVERAGE
-  --sample              sample id (default = bam-filename)
+
+    -h, --help            show this help message and exit
+    --sv                  call SV from the aligned contigs
+    --bam BAM             input bam (contigs
+    --q Q                 minimum allowed mapping quality(default = 10)
+    --len_ctg LEN_CTG     minimum uniquely mapped contig length (default = 25)
+    --max_coverage MAX_COVERAGE
+    --sample              sample id (default = bam-filename)
                         calls from regions exceeding the maximum coverage are
                         filtered
-  --min_size MIN_SIZE   minimum variant size (default=100)
+    --min_size MIN_SIZE   minimum variant size (default=100)
 
 # SNV
 Call indels and SNV using samtools pipelup/bcftools call
