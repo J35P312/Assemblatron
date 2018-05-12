@@ -50,7 +50,7 @@ def assembly_stats(args):
 
 				if content[2] in chromosome_order:
 					pos=int(math.floor(int(content[3])/50))
-					to_add=int(math.ceil(aln_len/50.0))
+					to_add=int(math.floor(aln_len/50.0))
 					for i in range(0,to_add):
 						if i < to_add-1:
 							coverage_structure[content[2]][pos]+= 1
@@ -63,7 +63,7 @@ def assembly_stats(args):
 						pos+=1
 
 			else:
-				unmapped+=compute_aln_length(content[5])
+				unmapped+=len(content[9])
 
 	for chromosome in coverage_structure:
 		for i in range(0,len(coverage_structure[chromosome])):
@@ -112,8 +112,8 @@ def assembly_stats(args):
 			
             
 
-	print "\t".join	(["file","N50","L50","N90","L90","number_of_contigs","assembly_size","longest_contig","zero_coverage","covered_bases","zero_coverage(q>30)","covered_bases(q>30)","reference_length","unmapped_bases"])
-	print "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(args.bam,N_50,L_50,N_90,L_90,len(contig_sizes),assembly_size,max(contig_sizes),uncovered/float(total),covered/float(total),uncovered_20/float(total),covered_20/float(total),total,unmapped)
+	print "\t".join	(["file","N50","L50","N90","L90","number_of_contigs","assembly_size","longest_contig","zero_coverage","covered_bases","zero_coverage(q>30)","covered_bases(q>30)","reference_length","unmapped_bases","unmapped%"])
+	print "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(args.bam,N_50,L_50,N_90,L_90,len(contig_sizes),assembly_size,max(contig_sizes),uncovered/float(total),covered/float(total),uncovered_20/float(total),covered_20/float(total),total,unmapped,unmapped/float(assembly_size))
 
 
 def assemble(args,wd):
@@ -170,7 +170,7 @@ elif args.sv:
 	parser.add_argument('--sv'        , help="call SV from the aligned contigs", required=False, action="store_true")
 	parser.add_argument('--bam',required = True,type=str, help="input bam (contigs)")
 	parser.add_argument('--q',type=int, default =10 ,help="minimum allowed mapping quality(default = 10)", required=False)
-	parser.add_argument('--len_ctg'       ,type=int, default = 25, help="minimum contig length(default = 100)", required=False)
+	parser.add_argument('--len_ctg'       ,type=int, default = 35, help="minimum uniqyelly mapped contig length(default = 35)", required=False)
 	parser.add_argument('--max_coverage'       ,type=int, default = 5, help="calls from regions exceeding the maximum coverage are filtered", required=False)
 	parser.add_argument('--min_size'       ,type=int, default = 100, help="minimum variant size)", required=False)  
         parser.add_argument('--sample'       ,type=str, help="sample id, as shown in the format column", required=False)

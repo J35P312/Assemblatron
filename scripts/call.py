@@ -23,7 +23,6 @@ def header():
 ]
     print "\n".join(header)
 
-
 def compute_aln_length(cigar):
     length=0
     #compute the length of the contig
@@ -37,11 +36,45 @@ def retrieve_var(coverage_structure,contigs,contig,var,order,i):
 
     chra=contigs[contig]["chr"][order[i]]
     posa=contigs[contig]["pos"][order[i]]+compute_aln_length(contigs[contig]["cigar"][order[i]])-1
-    index_a=int(math.floor(contigs[contig]["pos"][order[i]]/500.0))+int(math.floor(compute_aln_length(contigs[contig]["cigar"][order[i]])/500.0))
+    index_a=int(math.floor(contigs[contig]["pos"][order[i]]/100.0))+int(math.floor(compute_aln_length(contigs[contig]["cigar"][order[i]])/100.0))
 
-    return({"type":var,"chrA":chra,"chrB":contigs[contig]["chr"][order[i+1]],"start":posa,"end":contigs[contig]["pos"][order[i+1]],"oa":contigs[contig]["orientation"][order[i]],"ob":contigs[contig]["orientation"][order[i+1]],"contig":contig,"qa":contigs[contig]["q"][order[i]],"qb":contigs[contig]["q"][order[i+1]],"cigara":contigs[contig]["cigar"][order[i]],"cigarb":contigs[contig]["cigar"][order[i+1]],"call":i,"lena":compute_aln_length(contigs[contig]["cigar"][order[i]]),"lenb":compute_aln_length(contigs[contig]["cigar"][order[i+1]]),"cova":coverage_structure[chra][ index_a ] , "covb":coverage_structure[contigs[contig]["chr"][order[i+1]]] [ int(math.floor(contigs[contig]["pos"][order[i+1]]/500.0)) ] })
+    return({"type":var,"chrA":chra,"chrB":contigs[contig]["chr"][order[i+1]],"start":posa,"end":contigs[contig]["pos"][order[i+1]],"oa":contigs[contig]["orientation"][order[i]],"ob":contigs[contig]["orientation"][order[i+1]],"contig":contig,"qa":contigs[contig]["q"][order[i]],"qb":contigs[contig]["q"][order[i+1]],"cigara":contigs[contig]["cigar"][order[i]],"cigarb":contigs[contig]["cigar"][order[i+1]],"call":i,"lena":compute_aln_length(contigs[contig]["cigar"][order[i]]),"lenb":compute_aln_length(contigs[contig]["cigar"][order[i+1]]),"cova":coverage_structure[chra][ index_a ] , "covb":coverage_structure[contigs[contig]["chr"][order[i+1]]] [ int(math.floor(contigs[contig]["pos"][order[i+1]]/100.0)) ] })
 
+def order_segments(assigned_segments,kmer):
+        #remove segments that are too short, and determine the order of segments
+        order=[]
+        first=True
+        for i in range(0,len(assigned_segments)):
+            if first:
+                current_segment=assigned_segments[i]
+                length=1
+                segment_start_pos=0
+                first=False
+                continue
 
+            if current_segment == assigned_segments[i] and i < len(assigned_segments) -1:
+                length+=1
+            elif current_segment == assigned_segments[i] and current_segment !=-1 and i == len(assigned_segments) -1:
+                    if not order and length > kmer:
+                        order.append(current_segment)
+                    elif not order:
+                        pass
+                    elif order[-1] != current_segment and length > kmer:
+                        order.append(current_segment)
+            else:
+                if current_segment != -1:
+                    if not order and length > kmer:
+                        order.append(current_segment)
+                    elif not order:
+                        pass
+                    elif order[-1] != current_segment and length > kmer:
+                        order.append(current_segment)
+
+                current_segment=assigned_segments[i]
+                segment_start_pos=i
+                length=1
+
+	return(order)
 
 
 def main(args):
@@ -69,7 +102,7 @@ def main(args):
                     content=line.strip().split()
                     chromosome=content[1].split("SN:")[-1]
                     length=int(content[2].split("LN:")[-1])
-                    bins=int( math.ceil(length/float(500)) )
+                    bins=int( math.ceil(length/float(100)) )
                     coverage_structure[chromosome]=numpy.zeros(bins)
                     chromosome_order.append(chromosome)
 
@@ -101,15 +134,36 @@ def main(args):
             contigs[content[0]]["sequence"].append(content[9])
     
             if content[2] in chromosome_order:
-                pos=int(math.floor(int(content[3])/500))
-                to_add=int(math.ceil(len(content[9])/500.0))
-                for i in range(0,to_add):
-                    if i < to_add-1:
-                        coverage_structure[content[2]][pos]+= 1
-                    else:
-                        coverage_structure[content[2]][pos]+=(len(content[9])-(to_add-1)*500)/500.0
-                    pos+=1
-    
+                sequence_length=compute_aln_length(content[5])
+                binSize=100
+                element=int(math.floor(int(content[3])/100.0))
+                
+
+                #coverage_structure[content[2]][pos]
+
+                #if the entire read is inside the region, add all the bases to sequenced bases
+                if(int(content[3]) >= element*binSize and int(content[3])+sequence_length-1 <= (element+1)*binSize):
+                        coverage_structure[content[2]][element] += sequence_length/100.0;
+                else:
+                #if the read starts within the region but reaches outside it, add only those bases that fit inside the region.
+                        coverage_structure[content[2]][element]+=((element+1)*binSize-int(content[3])+1)/float(binSize)
+
+                        #the part of the read hanging out of the bin is added to the bins following the currentbin
+                        remainingRead=sequence_length-((element+1)*binSize-int(content[3])+1);
+                        while (remainingRead >= binSize and  len(coverage_structure[content[2]]) > element+1 ):
+                                element+=1;
+                                coverage_structure[content[2]][element]+=1;
+                                remainingRead=remainingRead-binSize;
+                        
+                        if (remainingRead > 0 and len(coverage_structure[content[2]]) > element+1):
+                                element+=1;
+                                coverage_structure[content[2]][element]+=remainingRead/100.0;
+                        
+
+
+
+
+
     #create alignment "maps" across all the contigs
     calls=[]
     for contig in contigs:
@@ -159,39 +213,7 @@ def main(args):
             else:
                 assigned_segments.append(-1)
 
-        first=True
-        order=[]
-        #remove segments that are too short, and determine the order of segments
-        for i in range(0,contig_length):
-            if first:
-                current_segment=assigned_segments[i]
-                segment_length=1
-                segment_start_pos=0
-                first=False
-                if current_segment != -1:
-                    order.append(current_segment)
-                continue
-            if current_segment == assigned_segments[i] and i < contig_length -1:
-                length+=1
-            elif current_segment == assigned_segments[i] and current_segment !=-1 and i == contig_length -1:
-                    if not order and length > kmer:
-                        order.append(current_segment)
-                    elif not order:
-                        pass
-                    elif order[-1] != current_segment and length > kmer:
-                        order.append(current_segment)
-            else:
-                if current_segment != -1:
-                    if not order and length > kmer:
-                        order.append(current_segment)
-                    elif not order:
-                        pass
-                    elif order[-1] != current_segment and length > kmer:
-                        order.append(current_segment)
-
-                current_segment=assigned_segments[i]
-                segment_start_pos=i
-                length=1
+        order=order_segments(assigned_segments,kmer)
     
         if len(order) > 1:
     
@@ -222,6 +244,7 @@ def main(args):
                     calls.append(retrieve_var(coverage_structure,contigs,contig,"INV",order,i))
 
     print "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t{}".format(sample)
+    het_lim=1.5
     for call in calls:
         if call["type"] == "BND":
             INFO="SVTYPE={};MAPQ={},{};CIGAR={},{};ORIENTATION={},{},ALNLEN={},{};COV={},{}".format(call["type"],call["qa"],call["qb"],call["cigara"],call["cigarb"],call["oa"],call["ob"],call["lena"],call["lenb"],call["cova"],call["covb"]);
@@ -235,7 +258,10 @@ def main(args):
             FILTER="PASS"
             if call["covb"] >= max_cov or call["cova"] >= max_cov:
                 FILTER="MaxCov"
-            print "{}\t{}\t{}\tN\t{}\t.\t{}\t{}\tGT\t./1".format(call["chrA"],call["start"],VARID,ALT,FILTER,INFO)
+            zygosity="1/1"
+            if call["covb"] >= het_lim or call["cova"] >= het_lim:
+                zygosity="0/1"
+            print "{}\t{}\t{}\tN\t{}\t.\t{}\t{}\tGT\t{}".format(call["chrA"],call["start"],VARID,ALT,FILTER,INFO,zygosity)
         elif call["type"] == "INS":
             INFO="INSLEN={};INSCIGAR={};INSCTG={};SVTYPE={};MAPQ={},{};CIGAR={},{};ORIENTATION={},{},ALNLEN={},{};COV={},{}".format(call["lenb"],call["cigarb"],call["seqb"],call["type"],call["qa"],call["qc"],call["cigara"],call["cigarc"],call["oa"],call["oc"],call["lena"],call["lenc"],call["cova"],call["cova"]);
 
@@ -247,10 +273,14 @@ def main(args):
                 FILTER="MinLen"
             if call["cova"] >= max_cov:
                 FILTER="MaxCov"
-            print "{}\t{}\t{}\tN\t{}\t.\t{}\t{}\tGT\t./1".format(call["chrA"],call["start"],VARID,ALT,FILTER,INFO)
+            zygosity="1/1"
+            if call["covb"] >= het_lim or call["cova"] >= het_lim:
+                zygosity="0/1"
+            print "{}\t{}\t{}\tN\t{}\t.\t{}\t{}\tGT\t{}".format(call["chrA"],call["start"],VARID,ALT,FILTER,INFO,zygosity)
 
         else: 
             INFO="END={};SVLEN={};SVTYPE={};MAPQ={},{};CIGAR={},{};ORIENTATION={},{},ALNLEN={},{};COV={},{}".format(call["end"],abs(call["start"]-call["end"])+1,call["type"],call["qa"],call["qb"],call["cigara"],call["cigarb"],call["oa"],call["ob"],call["lena"],call["lenb"],call["cova"],call["covb"]);
+            print int(math.floor(call["start"]/100.0))
             VARID="{}_{}".format(call["contig"],call["call"])
             ALT="<{}>".format(call["type"])
             FILTER="PASS"
@@ -259,5 +289,8 @@ def main(args):
                 FILTER="MinLen"
             if call["covb"] >= max_cov or call["cova"] >= max_cov:
                 FILTER="MaxCov"
-            print "{}\t{}\t{}\tN\t{}\t.\t{}\t{}\tGT\t./1".format(call["chrA"],call["start"],VARID,ALT,FILTER,INFO)
+            zygosity="1/1"
+            if call["covb"] >= het_lim or call["cova"] >= het_lim:
+                zygosity="0/1"
+            print "{}\t{}\t{}\tN\t{}\t.\t{}\t{}\tGT\t{}".format(call["chrA"],call["start"],VARID,ALT,FILTER,INFO,zygosity)
     
