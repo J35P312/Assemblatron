@@ -280,7 +280,6 @@ def main(args):
 
         else: 
             INFO="END={};SVLEN={};SVTYPE={};MAPQ={},{};CIGAR={},{};ORIENTATION={},{},ALNLEN={},{};COV={},{}".format(call["end"],abs(call["start"]-call["end"])+1,call["type"],call["qa"],call["qb"],call["cigara"],call["cigarb"],call["oa"],call["ob"],call["lena"],call["lenb"],call["cova"],call["covb"]);
-            print int(math.floor(call["start"]/100.0))
             VARID="{}_{}".format(call["contig"],call["call"])
             ALT="<{}>".format(call["type"])
             FILTER="PASS"
