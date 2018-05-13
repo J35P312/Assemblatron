@@ -90,7 +90,7 @@ other options:
     --sv                  call SV from the aligned contigs
     --bam BAM             input bam (contigs
     --q Q                 minimum allowed mapping quality(default = 10)
-    --len_ctg LEN_CTG     minimum uniquely mapped contig length (default = 25)
+    --len_ctg LEN_CTG     minimum uniquely mapped contig length (default = 40)
     --max_coverage MAX_COVERAGE
     --sample              sample id (default = bam-filename)
                         calls from regions exceeding the maximum coverage are
