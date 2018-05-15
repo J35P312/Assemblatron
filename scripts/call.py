@@ -118,8 +118,7 @@ def order_segments(assigned_segments,kmer):
                 current_segment=assigned_segments[i]
                 segment_start_pos=i
                 length=1
-
-	return(order)
+        return(order)
 
 
 def main(args):

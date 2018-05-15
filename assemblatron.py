@@ -8,113 +8,7 @@ import itertools
 wd=os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, '{}/scripts'.format(wd))
 import call
-
-def compute_aln_length(cigar):
-    length=0
-    #compute the length of the contig
-    SC = ["".join(x) for _, x in itertools.groupby(cigar, key=str.isdigit)]
-    for i in range(0,len(SC)/2):
-        if SC[i*2+1] == "M":
-            length += int( SC[i*2] )
-    return length
-
-def assembly_stats(args):
-	uncovered=0
-	covered=0
-	uncovered_20=0
-	covered_20=0
-	total=0
-	unmapped=0
-
-	coverage_structure={}
-	coverage_structure_20={}
-	chromosome_order=[]
-	with os.popen("samtools view -H {}".format(args.bam)) as pipe:
-		for line in pipe:
-			if line[0] == "@":
-				if "SN:" in line:
-					content=line.strip().split()
-					chromosome=content[1].split("SN:")[-1]
-					length=int(content[2].split("LN:")[-1])
-					bins=int( math.ceil(length/float(50)) )
-					coverage_structure[chromosome]=numpy.zeros(bins)
-					coverage_structure_20[chromosome]=numpy.zeros(bins)
-					chromosome_order.append(chromosome)
-
-	with os.popen("samtools view {}".format(args.bam)) as pipe:
-		for line in pipe:
-			content=line.strip().split()
-			if content[2] != "*":
-				q=int(content[4])
-				aln_len=compute_aln_length(content[5])
-
-				if content[2] in chromosome_order:
-					pos=int(math.floor(int(content[3])/50))
-					to_add=int(math.floor(aln_len/50.0))
-					for i in range(0,to_add):
-						if i < to_add-1:
-							coverage_structure[content[2]][pos]+= 1
-							if q > 30:
-								coverage_structure_20[content[2]][pos]+= 1
-						else:
-							coverage_structure[content[2]][pos]+=(len(content[9])-(to_add-1)*50)/50.0
-							if q > 30:
-								coverage_structure[content[2]][pos]+=(len(content[9])-(to_add-1)*50)/50.0
-						pos+=1
-
-			else:
-				unmapped+=len(content[9])
-
-	for chromosome in coverage_structure:
-		for i in range(0,len(coverage_structure[chromosome])):
-			if coverage_structure[chromosome][i] >= 1:
-				covered += 50
-			else:
-				uncovered += 50
-
-			if coverage_structure_20[chromosome][i] >= 1:
-				covered_20 += 50
-			else:
-				uncovered_20 += 50
-
-			total += 50
-        
-
-	contig_sizes=[]
-	contig_size=0
-
-	with os.popen("samtools view -h -F 2048 {} | samtools view -F 1024 -Sh - | samtools view -Subh -F 256 | samtools fasta -".format(args.bam)) as pipe:
-		for line in pipe:
-			if ">" == line[0]:
-				if contig_size:
-					contig_sizes.append(contig_size)
-					contig_size=0
-				continue
-			contig_size += len(line.strip())
-
-	assembly_size=sum(contig_sizes)
-	n=0
-	N_50=0
-	L_50=0
-	N_90=0
-	L_90=0
-
-	for contig in sorted(contig_sizes):
-		n+= contig
-	
-		if n <= assembly_size/2: 
-			N_50= contig
-			L_50+=1
-
-		if n <= assembly_size*0.9:  
-			N_90= contig
-			L_90+=1      
-			
-            
-
-	print "\t".join	(["file","N50","L50","N90","L90","number_of_contigs","assembly_size","longest_contig","zero_coverage","covered_bases","zero_coverage(q>30)","covered_bases(q>30)","reference_length","unmapped_bases","unmapped%"])
-	print "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(args.bam,N_50,L_50,N_90,L_90,len(contig_sizes),assembly_size,max(contig_sizes),uncovered/float(total),covered/float(total),uncovered_20/float(total),covered_20/float(total),total,unmapped,unmapped/float(assembly_size))
-
+import stats
 
 def assemble(args,wd):
 	fermi="{}/fermikit/fermi.kit/".format(wd)
@@ -184,7 +78,7 @@ elif args.stats:
 	parser.add_argument('--bam',required = True,type=str, help="input bam (contigs)")
 	args= parser.parse_args()
 
-	assembly_stats(args)
+	stats.assembly_stats(args)
 
 elif args.align:
 	parser = argparse.ArgumentParser("""Assemblatron align - align contigs to the reference using bwa mem""")

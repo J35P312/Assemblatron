@@ -5,3 +5,6 @@ make
 cd ..
 
 pip install BESST
+
+cd scripts
+python setup.py build_ext --inplace
