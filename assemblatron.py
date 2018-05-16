@@ -159,6 +159,6 @@ elif args.snv:
 	parser.add_argument('--ref',required = True,type=str, help="reference fasta")
 
 	args= parser.parse_args()
-	os.system("samtools mpileup -uf {} {}  | bcftools call -cv".format(args.ref,args.bam))
+	os.system("samtools mpileup -uf {} {} -B -Q 0 --ff UNMAP | bcftools call -mv ".format(args.ref,args.bam))
 else:
 	parser.print_help()
