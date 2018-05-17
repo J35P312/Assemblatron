@@ -35,7 +35,7 @@ Dependencies:
 	bwa
 
 # Assemble
-Assemblatron performs de novo assembly using a pipeline similar fermikit fermikit. The pipeline is run through the following commands:
+Assemblatron performs de novo assembly using a pipeline similar to fermikit. The pipeline is run through the following commands:
 
 		python assemblatron.py --assemble --fastq <input.fastq> --prefix <prefix>
 
@@ -98,7 +98,7 @@ other options:
     --min_size MIN_SIZE   minimum variant size (default=100)
 
 # SNV
-Call indels and SNV using samtools pipelup/bcftools call
+Call indels and SNV using htsbox pileup (same as fermikit).
 
 the  output is printed to stdout
 

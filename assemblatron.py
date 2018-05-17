@@ -19,7 +19,7 @@ def assemble(args,wd):
 	os.system("{} | {}".format(bfc,ropebwt))
 	#assemble
 	os.system( "{}/fermi2 assemble -l {} -m {} -t {} {}.fmd 2> {}.pre.gz.log | gzip -1 > {}.pre.gz".format(fermi,args.l,args.m,args.cores,args.prefix,args.prefix,args.prefix) )
-	os.system("{}/fermi2 simplify -CSo 66 -m {} -T 61 {}.pre.gz 2>  {}.mag.gz.log > {}.fasta".format(fermi,args.m,args.prefix,args.prefix, args.prefix))
+	os.system("{}/fermi2 simplify -CSo 66 -m {} -T 61 {}.pre.gz 2>  {}.mag.gz.log > {}.fastq".format(fermi,args.m,args.prefix,args.prefix, args.prefix))
 
 	if args.align:
 		os.system("bwa mem -x intractg -t {} {} {}.fasta | samtools view -Sbh - | samtools sort -m 2G - > {}.bam".format(args.cores,args.ref,args.prefix,args.prefix))
@@ -151,7 +151,6 @@ elif args.fastq:
 	else:
 		os.system("samtools view -h -F 2048 {} | samtools view -F 1024 -Sh - | samtools view -Subh -F 256 - | samtools bam2fq -".format(args.bam))
 
-
 elif args.snv:
 	parser = argparse.ArgumentParser("""Assemblatron snv - call snvs using samtools pileup and bcftools""")
 	parser.add_argument('--snv'             , help="call snv from the aligned contigs", required=False, action="store_true")
@@ -159,6 +158,6 @@ elif args.snv:
 	parser.add_argument('--ref',required = True,type=str, help="reference fasta")
 
 	args= parser.parse_args()
-	os.system("samtools mpileup -uf {} {} -B -Q 0 --ff UNMAP | bcftools call -mv ".format(args.ref,args.bam))
+	os.system("{}/fermikit/htsbox/htsbox pileup -cuf {} {} ".format(wd,args.ref,args.bam))
 else:
 	parser.print_help()
