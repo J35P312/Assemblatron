@@ -22,7 +22,7 @@ def assemble(args,wd):
 	os.system("{}/fermi2 simplify -CSo 66 -m {} -T 61 {}.pre.gz 2>  {}.mag.gz.log > {}.fastq".format(fermi,args.m,args.prefix,args.prefix, args.prefix))
 
 	if args.align:
-		os.system("bwa mem -x intractg -t {} {} {}.fasta | samtools view -Sbh - | samtools sort -m 2G - > {}.bam".format(args.cores,args.ref,args.prefix,args.prefix))
+		os.system("bwa mem -x intractg -t {} {} {}.fastq | samtools view -Sbh - | samtools sort -m 2G - > {}.bam".format(args.cores,args.ref,args.prefix,args.prefix))
 		os.system("samtools index {}.bam".format(args.prefix) )
 
 version = "0.0.0"
