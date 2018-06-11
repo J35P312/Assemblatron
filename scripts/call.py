@@ -239,11 +239,15 @@ def main(args):
                     length = int( SC[j*2] )
                     #print [contig,length,pos,contigs[contig]["cigar"][i]]
                     for k in range(pos,pos+length):
-                        connectivity[k][0]+=1
-                        connectivity[k][i+1]+=1
+                        if "+" == contigs[contig]["orientation"][i]:
+                            connectivity[k][0]+=1
+                            connectivity[k][i+1]+=1
+                        else:
+                            connectivity[contig_length-k-1][0]+=1
+                            connectivity[contig_length-k-1][i+1]+=1
+                    
                 if SC[j*2+1] != "D":
                     pos+=int( SC[j*2] )
-
         segments=[]
         #find regions on the contig that are aligned uniquely
         for i in range(0,contig_length):
@@ -265,7 +269,6 @@ def main(args):
         order=order_segments(assigned_segments,kmer)
     
         if len(order) > 1:
-    
             for i in range(0,len(order)-1):
                 #discard low quality alignments
                 if len(order) == 3 and contigs[contig]["q"][order[0]] >= q and contigs[contig]["q"][order[-1]] >= q and contigs[contig]["chr"][order[0]] == contigs[contig]["chr"][order[-1]] and abs(contigs[contig]["pos"][order[0]] - contigs[contig]["pos"][order[-1]]) < ins_dist and (contigs[contig]["chr"][order[0]] != contigs[contig]["chr"][order[1]] or abs(contigs[contig]["pos"][order[0]]-contigs[contig]["pos"][order[1]]) > ins_dist ):
@@ -292,7 +295,6 @@ def main(args):
                 else:
                     calls.append(retrieve_var(coverage_structure,contigs,contig,"INV",order,i))
 
-    
     het_lim=1.5
     for call in calls:
         if not call["chrA"] in variant_calls:
