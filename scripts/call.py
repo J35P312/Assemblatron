@@ -287,7 +287,7 @@ def main(args):
                     calls.append(retrieve_var(coverage_structure,contigs,contig,"BND",order,i))                
                 elif not contigs[contig]["chr"][order[i]] == contigs[contig]["chr"][order[i+1]]:
                     calls.append(retrieve_var(coverage_structure,contigs,contig,"BND",order,i))
-                elif contigs[contig]["orientation"][i] == contigs[contig]["orientation"][order[i+1]]:
+                elif contigs[contig]["orientation"][order[i]] == contigs[contig]["orientation"][order[i+1]]:
                     if contigs[contig]["pos"][order[i]] < contigs[contig]["pos"][order[i+1]]:
                         calls.append(retrieve_var(coverage_structure,contigs,contig,"DEL",order,i))
                     else:
@@ -333,6 +333,11 @@ def main(args):
             variant_calls[call["chrA"]].append([call["start"],call["end"],ALT,"{}\t{}\t{}\tN\t{}\t.\t{}\t{}\tGT\t{}".format(call["chrA"],call["start"],VARID,ALT,FILTER,INFO,zygosity)])
 
         else: 
+            if call["end"] < call["start"]:
+                tmp=call["end"]
+                call["end"]=call["start"]
+                call["start"]=tmp
+
             INFO="END={};SVLEN={};SVTYPE={};MAPQ={},{};CIGAR={},{};ORIENTATION={},{},ALNLEN={},{};COV={},{}".format(call["end"],abs(call["start"]-call["end"])+1,call["type"],call["qa"],call["qb"],call["cigara"],call["cigarb"],call["oa"],call["ob"],call["lena"],call["lenb"],call["cova"],call["covb"]);
             VARID="{}_{}".format(call["contig"],call["call"])
             ALT="<{}>".format(call["type"])
@@ -345,6 +350,7 @@ def main(args):
             zygosity="1/1"
             if call["covb"] >= het_lim or call["cova"] >= het_lim:
                 zygosity="0/1"
+
             variant_calls[call["chrA"]].append([call["start"],call["end"],ALT,"{}\t{}\t{}\tN\t{}\t.\t{}\t{}\tGT\t{}".format(call["chrA"],call["start"],VARID,ALT,FILTER,INFO,zygosity)])
 
 
