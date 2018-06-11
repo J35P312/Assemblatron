@@ -80,10 +80,21 @@ def call_cigar_var(aln,min_len,max_cov,coverage_structure):
 def retrieve_var(coverage_structure,contigs,contig,var,order,i):
 
     chra=contigs[contig]["chr"][order[i]]
-    posa=contigs[contig]["pos"][order[i]]+compute_aln_length(contigs[contig]["cigar"][order[i]])-1
-    index_a=int(math.floor(contigs[contig]["pos"][order[i]]/100.0))+int(math.floor(compute_aln_length(contigs[contig]["cigar"][order[i]])/100.0))
 
-    return({"type":var,"chrA":chra,"chrB":contigs[contig]["chr"][order[i+1]],"start":posa,"end":contigs[contig]["pos"][order[i+1]],"oa":contigs[contig]["orientation"][order[i]],"ob":contigs[contig]["orientation"][order[i+1]],"contig":contig,"qa":contigs[contig]["q"][order[i]],"qb":contigs[contig]["q"][order[i+1]],"cigara":contigs[contig]["cigar"][order[i]],"cigarb":contigs[contig]["cigar"][order[i+1]],"call":i,"lena":compute_aln_length(contigs[contig]["cigar"][order[i]]),"lenb":compute_aln_length(contigs[contig]["cigar"][order[i+1]]),"cova":coverage_structure[chra][ index_a ] , "covb":coverage_structure[contigs[contig]["chr"][order[i+1]]] [ int(math.floor(contigs[contig]["pos"][order[i+1]]/100.0)) ] })
+    if contigs[contig]["orientation"][order[i]] == "+":
+        posa=contigs[contig]["pos"][order[i]]+compute_aln_length(contigs[contig]["cigar"][order[i]])-1
+    else:
+        posa=contigs[contig]["pos"][order[i]]
+
+    if contigs[contig]["orientation"][order[i]] == "+":
+        posb=contigs[contig]["pos"][order[i+1]]
+    else:
+        posb=contigs[contig]["pos"][order[i+1]]+compute_aln_length(contigs[contig]["cigar"][order[i+1]])-1
+    
+    index_a=int(math.floor(posa/100.0))
+    index_b=int(math.floor(posb/100.0))
+
+    return({"type":var,"chrA":chra,"chrB":contigs[contig]["chr"][order[i+1]],"start":posa,"end":posb,"oa":contigs[contig]["orientation"][order[i]],"ob":contigs[contig]["orientation"][order[i+1]],"contig":contig,"qa":contigs[contig]["q"][order[i]],"qb":contigs[contig]["q"][order[i+1]],"cigara":contigs[contig]["cigar"][order[i]],"cigarb":contigs[contig]["cigar"][order[i+1]],"call":i,"lena":compute_aln_length(contigs[contig]["cigar"][order[i]]),"lenb":compute_aln_length(contigs[contig]["cigar"][order[i+1]]),"cova":coverage_structure[chra][ index_a ] , "covb":coverage_structure[contigs[contig]["chr"][order[i+1]]] [ index_b] })
 
 def order_segments(assigned_segments,kmer):
         #remove segments that are too short, and determine the order of segments
@@ -288,10 +299,16 @@ def main(args):
                 elif not contigs[contig]["chr"][order[i]] == contigs[contig]["chr"][order[i+1]]:
                     calls.append(retrieve_var(coverage_structure,contigs,contig,"BND",order,i))
                 elif contigs[contig]["orientation"][order[i]] == contigs[contig]["orientation"][order[i+1]]:
-                    if contigs[contig]["pos"][order[i]] < contigs[contig]["pos"][order[i+1]]:
-                        calls.append(retrieve_var(coverage_structure,contigs,contig,"DEL",order,i))
+                    if contigs[contig]["orientation"][order[i]] == "+":
+                        if contigs[contig]["pos"][order[i]] < contigs[contig]["pos"][order[i+1]]:
+                            calls.append(retrieve_var(coverage_structure,contigs,contig,"DEL",order,i))
+                        else:
+                            calls.append(retrieve_var(coverage_structure,contigs,contig,"TDUP",order,i))
                     else:
-                        calls.append(retrieve_var(coverage_structure,contigs,contig,"TDUP",order,i))
+                        if contigs[contig]["pos"][order[i]] > contigs[contig]["pos"][order[i+1]]:
+                            calls.append(retrieve_var(coverage_structure,contigs,contig,"DEL",order,i))
+                        else:
+                            calls.append(retrieve_var(coverage_structure,contigs,contig,"TDUP",order,i))
                 else:
                     calls.append(retrieve_var(coverage_structure,contigs,contig,"INV",order,i))
 
