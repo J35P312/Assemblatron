@@ -102,7 +102,7 @@ def assembly_stats(args):
 	N_90=0
 	L_90=0
 
-	for contig in sorted(contig_sizes):
+	for contig in sorted(contig_sizes, reverse=True):
 		n+= contig
 	
 		if n <= assembly_size/2: 
