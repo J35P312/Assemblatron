@@ -8,3 +8,9 @@ pip install BESST
 
 cd scripts
 python setup.py build_ext --inplace
+
+cd ..
+
+git clone https://github.com/ablab/quast.git
+cd quast
+pip install -e .

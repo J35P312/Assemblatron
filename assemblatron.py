@@ -35,6 +35,7 @@ parser.add_argument('--stats'          , help="compute assembly stats from align
 parser.add_argument('--align'          , help="align contigs to reference using bwa mem", required=False, action="store_true")
 parser.add_argument('--fasta'      , help="convert aligned contigs bam file to fasta", required=False, action="store_true")
 parser.add_argument('--fastq'      , help="convert bam to fastq", required=False, action="store_true")
+parser.add_argument('--quast'        , help="compute assembly stats using quast", required=False, action="store_true")
 
 args, unknown = parser.parse_known_args()
 
@@ -79,6 +80,25 @@ elif args.stats:
 	args= parser.parse_args()
 
 	stats.assembly_stats(args)
+elif args.quast:
+
+        parser = argparse.ArgumentParser("""QUAST - quality control""")
+        parser.add_argument('--quast'        , help="compute assembly stats using quast", required=False, action="store_true")
+        parser.add_argument('--contigs', nargs='*', help="input contigs (multiple assemblies are allowed)", required=True)
+        parser.add_argument('--ref',required = False,type=str, help="reference fasta")
+        parser.add_argument('--output',required = True,type=str, help="output folder")
+	parser.add_argument('--features',nargs='*',required = False,type=str, help="Feature BED/GFF file")
+        parser.add_argument('--len',default=100,type=int, help="minimum contig length (default= 100 bp)")
+        args= parser.parse_args()
+
+	quast="quast.py {} --output-dir {} --min-contig {}".format(" ".join(args.contigs),args.output,args.len)
+
+	if args.ref:
+		quast+=" -r {}".format(args.ref)
+
+	if args.features:
+		quast+=" -g {}".format(" ".join(args.features))
+	os.system(quast)
 
 elif args.align:
 	parser = argparse.ArgumentParser("""Assemblatron align - align contigs to the reference using bwa mem""")
@@ -115,6 +135,8 @@ elif args.scaffold:
 	parser.add_argument('--mem'      , help="maximum  mempry per thread (gigabytes)", type=int, default=4)
         parser.add_argument('--iter'      , help="Number of itterations (default = 500000)", type=int, default=500000)
 	parser.add_argument('--cores'       ,type=int, default = 8, help="number of cores (default = 2)", required=False)
+        parser.add_argument('-q'       ,type=int, help="minimum mapping quality for scaffolding", required=False)
+        parser.add_argument('-p'       ,type=int, help="minimum number of read-pairs to create edge", required=False)
 	args= parser.parse_args()
 
 	args.prefix=args.filename
@@ -132,10 +154,17 @@ elif args.scaffold:
 	os.system("samtools index {}".format(args.bam))
 
 	if args.rf:
-		os.system("runBESST -c {} -f {} -orientation rf -o {} --iter {}".format(args.contigs,args.bam,args.output,args.iter))
+		besst="runBESST -c {} -f {} -orientation rf -o {} -plots --iter {}".format(args.contigs,args.bam,args.output,args.iter)
 	else:
-		os.system("runBESST -c {} -f {} -orientation fr -o {} --iter {}".format(args.contigs,args.bam,args.output,args.iter))
-	
+		besst="runBESST -c {} -f {} -orientation fr -o {} -plots --iter {}".format(args.contigs,args.bam,args.output,args.iter)
+
+	if args.q:
+		besst+= " --min_mapq {}".format(args.q)
+
+	if args.p:
+                besst+= " -e {}".format(args.p)
+
+	os.system(besst)
 elif args.fastq:
 
 	parser = argparse.ArgumentParser("""Assemblatron fastq - converts bam to fastq using samtools""")

@@ -15,7 +15,7 @@ The full workflow involves:
 
     3: alignment of the contigs
 
-    4: compute assembly statistics
+    4: Quality control, using assemblatron stats or quast
 
     5: variant calling
 
@@ -26,10 +26,9 @@ The assemblatron workflow is run through the following commands:
 
 run the install script:
 ./INSTALL.sh
-The install script will download and install BESST, fermikit, and tiddit.
+The install script will download and install BESST, fermikit, and quast.
 Dependencies:
 
-	vcftools
 	samtools
 	python 2.7
 	bwa
@@ -71,11 +70,22 @@ Assemblatron performs alignment using bwa mem. The output is printed to a file n
 A bam file named <prefix>.bam will be produced
 
 # Stats
-compute various statistics of an assembly. THe output is printed to stdout.
+compute various statistics of an assembly. The output is printed to stdout.
 
-python assemblatron.py --stats <contigs_bam>
+python assemblatron.py --stats --bam <contigs_bam>
 	
 The statistics include N50, L50, assembly size, and the number of contigs.
+
+# Quast
+
+The quality control may be  performed using quast. Quast performs a more in-depth but slower analysis.
+
+python assemblatron.py --quast --fasta <contigs_fasta> --output <output_folder>
+
+python assemblatron.py --quast --fasta <contigs_fasta> --ref <reference.fasta> --output <output_folder>
+
+The statistics module supports any number of fasta files. Type --help for more information. 
+NOTE: use absolute path for the output directory.
 
 # SV
 Call SV. Assemblatron will calssify variants as DEL, INV, BND (translocation or complex), INS, and TDUP.
@@ -102,7 +112,7 @@ Call indels and SNV using htsbox pileup (same as fermikit).
 
 the  output is printed to stdout
 
-other options:
+options:
 
   -h, --help  show this help message and exit
   --bam BAM   input bam (contigs)
@@ -140,3 +150,7 @@ Cite the components that you used, as well as the Assemblatron git hub page.
 	If you performed scaffolding, please cite the BESST paper:
 
 		https://github.com/ksahlin/BESST
+
+	For more info on QUAST:
+
+		https://github.com/ablab/quast
