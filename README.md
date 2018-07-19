@@ -37,7 +37,13 @@ Dependencies:
 
 Assemblatron may also be run using the singularity container:
 
+Download the container:
 
+	singularity pull --name assemblatron.img shub://J35P312/Assemblatron
+
+Run assemblatron through the singularity container:
+
+	singularity exec assemblatron.img assemblatron.py --help
 
 # Assemble
 Assemblatron performs de novo assembly using a pipeline similar to fermikit. The pipeline is run through the following commands:
@@ -59,7 +65,7 @@ For more info on Fermikit, visit the Fermikit website:
 
 		https://github.com/lh3/fermikit
 
-# Scaffolfing
+# Scaffolding
 
 Perform Scaffolding using BESST. 
 
