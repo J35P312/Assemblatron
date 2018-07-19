@@ -12,20 +12,27 @@ import stats
 
 def assemble(args,wd):
 	fermi="{}/fermikit/fermi.kit/".format(wd)
+	bfc_path="{}/bfc".format(wd)
+
+	#run kmc
+	kmc_prefix="{}.kmc".format(args.prefix)
+	kmc="kmc -k{} -m30 {} {} {}".format(args.k,args.fastq,kmc_prefix,args.tmp)
+	os.system(kmc)
 
 	#apply bloom filter and build the index
 	ropebwt="{}/ropebwt2 -m {} -dNCr - > {}.fmd 2> {}.fmd.log".format(fermi,args.batch,args.prefix,args.prefix)
-	bfc="{}/bfc -1s {} -k {} -t {} {} 2> {}.flt.fq.gz.log".format(fermi,args.z,args.l,args.cores,args.fastq,args.prefix)
+	bfc="{}/bfc-kmc -k {} -t {} {} {} 2> {}.flt.fq.gz.log".format(bfc_path,args.k,args.cores,kmc_prefix,args.fastq,args.prefix)
 	os.system("{} | {}".format(bfc,ropebwt))
+
 	#assemble
-	os.system( "{}/fermi2 assemble -l {} -m {} -t {} {}.fmd 2> {}.pre.gz.log | gzip -1 > {}.pre.gz".format(fermi,args.l,args.m,args.cores,args.prefix,args.prefix,args.prefix) )
-	os.system("{}/fermi2 simplify -CSo 66 -m {} -T 61 {}.pre.gz 2>  {}.mag.gz.log > {}.fastq".format(fermi,args.m,args.prefix,args.prefix, args.prefix))
+	os.system( "{}/fermi2 assemble -l {} -t {} {}.fmd 2> {}.pre.gz.log | gzip -1 > {}.pre.gz".format(fermi,args.l,args.cores,args.prefix,args.prefix,args.prefix) )
+	os.system("{}/fermi2 simplify -CS -T {} {}.pre.gz 2>  {}.mag.gz.log > {}.fastq".format(fermi,args.l,args.prefix,args.prefix, args.prefix))
 
 	if args.align:
 		os.system("bwa mem -x intractg -t {} {} {}.fastq | samtools view -Sbh - | samtools sort -m 2G - > {}.bam".format(args.cores,args.ref,args.prefix,args.prefix))
 		os.system("samtools index {}.bam".format(args.prefix) )
 
-version = "0.0.0"
+version = "0.2.0"
 parser = argparse.ArgumentParser("""Assemblatron: a de novo assembly  pipeline""".format(version),add_help=False)
 parser.add_argument('--assemble'       , help="Perform de novo assembly using the Fermi2 assembler", required=False, action="store_true")
 parser.add_argument('--scaffold'      , help="perform scaffolding using BESST", required=False, action="store_true")
@@ -47,12 +54,17 @@ if args.assemble:
 	parser.add_argument('--prefix',required = True,type=str, help="prefix of the output files")
 	parser.add_argument('--cores',type=int, default =16, help="number of cores (default = 16)")
 	parser.add_argument('--batch',type=str, default ="20g", help="batch size for multi-string indexing; 0 for single-string (default=20g)")
-	parser.add_argument('-z',type=str, default ="3G", help="genome size (use K,M, or G) (default = 3G)")
 	parser.add_argument('-l',type=int, default =81, help="min match (default = 81)")
-	parser.add_argument('-m',type=int, default =100, help="min merge length (default = 100)")
+	parser.add_argument('-k',type=int, default =81, help="minimum kmer length for kmc/bfc error correction (default = 41)")
 	parser.add_argument('--align', help="align contigs to reference using bwa mem", required=False, action="store_true")
 	parser.add_argument('--ref',type=str, help="reference fasta, required for alignment of the contigs")
+        parser.add_argument('--tmp',type=str,default="$TMPDIR", help="tmp directory, kmc will write tmp files here (default=$TMPDIR)")
 	args= parser.parse_args()
+
+	if not os.path.isdir(args.tmp):
+		print "error: no such directory {}".format(args.tmp)
+		print "set the --tmp variable to an existing folder"
+		quit()
 
 	if not args.align or (args.align and args.ref):
 		assemble(args,wd)

@@ -14,3 +14,10 @@ cd ..
 git clone https://github.com/ablab/quast.git
 cd quast
 pip install -e .
+cd ..
+
+git clone https://github.com/lh3/bfc.git -b kmc
+cd bfc
+make ..
+
+conda install -c bioconda kmc

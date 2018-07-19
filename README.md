@@ -26,9 +26,10 @@ The assemblatron workflow is run through the following commands:
 
 run the install script:
 ./INSTALL.sh
-The install script will download and install BESST, fermikit, and quast.
+The install script will download and install BESST, fermikit,kmc, bfc-kmc, and quast.
 Dependencies:
 
+	conda
 	samtools
 	python 2.7
 	bwa
@@ -42,13 +43,13 @@ You may also align the contigs to the reference genome:
 
 		python assemblatron.py --assemble --ref <reference.fasta> --fastq <input.fastq> --prefix <prefix> --align
 
-Pe default, the Assembly module will generate an output file named <prefix>.fasta. If asssemblatron was run with the --align option, a bam file named <prefix>.bam will be produced as well.
+Per default, the Assembly module will generate an output file named <prefix>.fastq. If asssemblatron was run with the --align option, a bam file named <prefix>.bam will be produced as well.
 
 Type help for more  info:
 
 		 python assemblatron.py --assemble --help
 
-The main difference between Fermikit and Assemblatron assemble is the default parameters. Additionally, Assemblatron uses piping more  extensively to reduce the writing/reading to disk.
+The main differences between fermikit and Assemblatron is that Assemblatron uses the kmc branch of bfc. Additionally, Assemblatron uses piping more extensively, hence it  will not create any intermidiate fastq files.
 For more info on Fermikit, visit the Fermikit website:
 
 		https://github.com/lh3/fermikit
