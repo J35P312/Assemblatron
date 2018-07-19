@@ -18,6 +18,6 @@ cd ..
 
 git clone https://github.com/lh3/bfc.git -b kmc
 cd bfc
-make ..
+make
 
 conda install -c bioconda kmc

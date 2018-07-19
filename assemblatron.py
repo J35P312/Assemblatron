@@ -21,7 +21,7 @@ def assemble(args,wd):
 
 	#apply bloom filter and build the index
 	ropebwt="{}/ropebwt2 -m {} -dNCr - > {}.fmd 2> {}.fmd.log".format(fermi,args.batch,args.prefix,args.prefix)
-	bfc="{}/bfc-kmc -k {} -t {} {} {} 2> {}.flt.fq.gz.log".format(bfc_path,args.k,args.cores,kmc_prefix,args.fastq,args.prefix)
+	bfc="{}/bfc-kmc -k {} -T -t {} {} {} 2> {}.flt.fq.gz.log".format(bfc_path,args.k,args.cores,kmc_prefix,args.fastq,args.prefix)
 	os.system("{} | {}".format(bfc,ropebwt))
 
 	#assemble

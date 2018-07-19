@@ -33,6 +33,11 @@ Dependencies:
 	samtools
 	python 2.7
 	bwa
+	numpy
+
+Assemblatron may also be run using the singularity container:
+
+
 
 # Assemble
 Assemblatron performs de novo assembly using a pipeline similar to fermikit. The pipeline is run through the following commands:
