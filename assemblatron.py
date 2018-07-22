@@ -27,7 +27,7 @@ def assemble(args,wd):
 
 	#assemble
 	os.system( "{}/fermi2 assemble -l {} -t {} {}.fmd 2> {}.pre.gz.log | gzip -1 > {}.pre.gz".format(fermi,args.l,args.cores,args.prefix,args.prefix,args.prefix) )
-	os.system("{}/fermi2 simplify -CS -T {} {}.pre.gz 2>  {}.mag.gz.log > {}.fastq".format(fermi,args.l,args.prefix,args.prefix, args.prefix))
+	os.system("{}/fermi2 simplify -CS -T 300 -w 7 {}.pre.gz 2>  {}.mag.gz.log > {}.fastq".format(fermi,args.prefix,args.prefix, args.prefix))
 
 	if args.align:
 		os.system("bwa mem -x intractg -t {} {} {}.fastq | samtools view -Sbh - | samtools sort -m 2G - > {}.bam".format(args.cores,args.ref,args.prefix,args.prefix))
