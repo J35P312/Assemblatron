@@ -33,7 +33,7 @@ def assemble(args,wd):
 		os.system("bwa mem -x intractg -t {} {} {}.fastq | samtools view -Sbh - | samtools sort -m 2G - > {}.bam".format(args.cores,args.ref,args.prefix,args.prefix))
 		os.system("samtools index {}.bam".format(args.prefix) )
 
-version = "0.2.0"
+version = "0.2.1"
 parser = argparse.ArgumentParser("""Assemblatron: a de novo assembly  pipeline""".format(version),add_help=False)
 parser.add_argument('--assemble'       , help="Perform de novo assembly using the Fermi2 assembler", required=False, action="store_true")
 parser.add_argument('--scaffold'      , help="perform scaffolding using BESST", required=False, action="store_true")
