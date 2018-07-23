@@ -27,7 +27,7 @@ def assemble(args,wd):
 
 	#assemble
 	os.system( "{}/fermi2 assemble -l {} -t {} {}.fmd 2> {}.pre.gz.log | gzip -1 > {}.pre.gz".format(fermi,args.l,args.cores,args.prefix,args.prefix,args.prefix) )
-	os.system("{}/fermi2 simplify -CS -T 300 -w 7 {}.pre.gz 2>  {}.mag.gz.log > {}.fastq".format(fermi,args.prefix,args.prefix, args.prefix))
+	os.system("{}/fermi2 simplify -CS -T {} -w {} {}.pre.gz 2>  {}.mag.gz.log > {}.fastq".format(fermi,args.l*3,args.w,args.prefix,args.prefix, args.prefix))
 
 	if args.align:
 		os.system("bwa mem -x intractg -t {} {} {}.fastq | samtools view -Sbh - | samtools sort -m 2G - > {}.bam".format(args.cores,args.ref,args.prefix,args.prefix))
@@ -57,6 +57,7 @@ if args.assemble:
 	parser.add_argument('--batch',type=str, default ="20g", help="batch size for multi-string indexing; 0 for single-string (default=20g)")
 	parser.add_argument('-l',type=int, default =81, help="min match (default = 81)")
 	parser.add_argument('-k',type=int, default =41, help="minimum kmer length for kmc/bfc error correction (default = 41)")
+	parser.add_argument('-w',type=int, default =5, help="minimum coverage across bubbles(default=5)")
 	parser.add_argument('--align', help="align contigs to reference using bwa mem", required=False, action="store_true")
 	parser.add_argument('--ref',type=str, help="reference fasta, required for alignment of the contigs")
         parser.add_argument('--tmp',type=str,default="$TMPDIR", help="tmp directory, kmc will write tmp files here (default=$TMPDIR)")
