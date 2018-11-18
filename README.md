@@ -15,7 +15,7 @@ The full workflow involves:
 
     3: alignment of the contigs
 
-    4: Quality control, using assemblatron stats or quast
+    4: Quality control
 
     5: variant calling
 
@@ -71,7 +71,7 @@ Perform Scaffolding using BESST.
 
 		python assemblatron.py scaffold --contigs <contigs> --fastq <fastq> --output <output> --tmpdir
 	
-Where <Contigs> is a fasta file containing the contigs produced through de novo assembly, and <fastq> is a fastq file containing paired-end reads. The scaffolding process including alignment takes about 24-48 hours on a 16 core machine when using a 30X whole genome for scaffolding.
+Where <Contigs> is a fasta file containing the contigs produced through de novo assembly, and <fastq> is a fastq file containing paired-end reads. The scaffolding process including alignment takes about 10 hours on a 16 core machine when using a 30X whole genome for scaffolding.
 When running BESST on the assemblatron output contigs, the N50 is usually improved by a factor of 10 or so.
 
 # Align
@@ -87,14 +87,6 @@ compute various statistics of an assembly. The output is printed to stdout.
 python assemblatron.py --stats --bam <contigs_bam>
 	
 The statistics include N50, L50, assembly size, and the number of contigs.
-
-# Quast
-
-The quality control may be  performed using quast. Quast performs a more in-depth but slower analysis.
-
-python assemblatron.py --quast --fasta <contigs_fasta> --output <output_folder>
-
-python assemblatron.py --quast --fasta <contigs_fasta> --ref <reference.fasta> --output <output_folder>
 
 The statistics module supports any number of fasta files. Type --help for more information. 
 NOTE: use absolute path for the output directory.
@@ -120,7 +112,7 @@ other options:
     --min_size MIN_SIZE   minimum variant size (default=100)
 
 # SNV
-Call indels and SNV using htsbox pileup (same as fermikit).
+Call indels and SNV using htsbox pileup.
 
 the  output is printed to stdout
 
@@ -162,7 +154,3 @@ Cite the components that you used, as well as the Assemblatron git hub page.
 	If you performed scaffolding, please cite the BESST paper:
 
 		https://github.com/ksahlin/BESST
-
-	For more info on QUAST:
-
-		https://github.com/ablab/quast

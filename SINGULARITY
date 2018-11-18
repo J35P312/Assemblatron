@@ -26,7 +26,7 @@ LC_ALL=C.UTF-8
     conda config --add channels conda-forge
     conda config --add channels bioconda
 
-    conda install -c bioconda samtools bwa
+    conda install -c bioconda samtools bwa sambamba minimap2
     pip install numpy cython
 
     cd /root/ && git clone https://github.com/J35P312/Assemblatron.git

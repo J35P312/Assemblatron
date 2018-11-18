@@ -27,13 +27,12 @@ def assemble(args,wd):
 
 	#assemble
 	os.system( "{}/fermi2 assemble -l {} -t {} {}.fmd 2> {}.pre.gz.log | gzip -1 > {}.pre.gz".format(fermi,args.l,args.cores,args.prefix,args.prefix,args.prefix) )
-	os.system("{}/fermi2 simplify -CS -T {} -w {} {}.pre.gz 2>  {}.mag.gz.log > {}.fastq".format(fermi,args.l*3,args.w,args.prefix,args.prefix, args.prefix))
+	os.system("{}/fermi2 simplify -CS -T {} -w {} {}.pre.gz 2>  {}.mag.gz.log > {}.mag".format(fermi,args.l*3,args.w,args.prefix,args.prefix, args.prefix))
 
 	if args.align:
-		os.system("bwa mem -x intractg -t {} {} {}.fastq | samtools view -Sbh - | samtools sort -m 2G - > {}.bam".format(args.cores,args.ref,args.prefix,args.prefix))
-		os.system("samtools index {}.bam".format(args.prefix) )
+		os.system("bwa mem -x intractg -t {} {} {}.mag | samtools view -Sbh - | sambamba sort -m 10G -t /dev/stdin -o {}.bam".format(args.cores,args.ref,args.prefix,args.threads,args.prefix))
 
-version = "0.2.1"
+version = "0.4.0"
 parser = argparse.ArgumentParser("""Assemblatron: a de novo assembly  pipeline""".format(version),add_help=False)
 parser.add_argument('--assemble'       , help="Perform de novo assembly using the Fermi2 assembler", required=False, action="store_true")
 parser.add_argument('--scaffold'      , help="perform scaffolding using BESST", required=False, action="store_true")
@@ -43,7 +42,6 @@ parser.add_argument('--stats'          , help="compute assembly stats from align
 parser.add_argument('--align'          , help="align contigs to reference using bwa mem", required=False, action="store_true")
 parser.add_argument('--fasta'      , help="convert aligned contigs bam file to fasta", required=False, action="store_true")
 parser.add_argument('--fastq'      , help="convert bam to fastq", required=False, action="store_true")
-parser.add_argument('--quast'        , help="compute assembly stats using quast", required=False, action="store_true")
 
 args, unknown = parser.parse_known_args()
 
@@ -94,37 +92,18 @@ elif args.stats:
 	args= parser.parse_args()
 
 	stats.assembly_stats(args)
-elif args.quast:
-
-        parser = argparse.ArgumentParser("""QUAST - quality control""")
-        parser.add_argument('--quast'        , help="compute assembly stats using quast", required=False, action="store_true")
-        parser.add_argument('--contigs', nargs='*', help="input contigs (multiple assemblies are allowed)", required=True)
-        parser.add_argument('--ref',required = False,type=str, help="reference fasta")
-        parser.add_argument('--output',required = True,type=str, help="output folder")
-	parser.add_argument('--features',nargs='*',required = False,type=str, help="Feature BED/GFF file")
-        parser.add_argument('--len',default=100,type=int, help="minimum contig length (default= 100 bp)")
-        args= parser.parse_args()
-
-	quast="quast.py {} --output-dir {} --min-contig {}".format(" ".join(args.contigs),args.output,args.len)
-
-	if args.ref:
-		quast+=" -r {}".format(args.ref)
-
-	if args.features:
-		quast+=" -g {}".format(" ".join(args.features))
-	os.system(quast)
 
 elif args.align:
 	parser = argparse.ArgumentParser("""Assemblatron align - align contigs to the reference using bwa mem""")
 	parser.add_argument('--align'          , help="align contigs to reference using bwa mem", required=False, action="store_true")
 	parser.add_argument('--ref',required = True,type=str, help="reference fasta")
-	parser.add_argument('--mem'      , help="maximum  mempory per thread (gigabytes)", type=int, default=2)
+	parser.add_argument('--mem'      , help="maximum  memory (gigabytes)", type=int, default=10)
 	parser.add_argument('--cores'       ,type=int, default = 8, help="number of cores (default = 2)", required=False)
 	parser.add_argument('--contigs',required = True,type=str, help="input contigs")
 	parser.add_argument('--prefix',required = True,type=str, help="output prefix")
 	args= parser.parse_args()
 
-	os.system("bwa mem -x intractg -t {} {} {} | samtools view -Sbh - | samtools sort -m {}G - > {}.bam".format(args.cores,args.ref,args.contigs,args.mem,args.prefix))
+	os.system("bwa mem -x intractg -t {} {} {} | samtools view -Sbh - | sambamba sort -m {}G /dev/stdin -o {}.bam".format(args.cores,args.ref,args.contigs,args.mem,args.prefix))
 	os.system( "samtools index {}.bam".format(args.prefix) )
 	
 elif args.fasta:
@@ -134,7 +113,7 @@ elif args.fasta:
 	parser.add_argument('--bam',required = True,type=str, help="input bam (contigs)")
 	args= parser.parse_args()
 
-	os.system("samtools view -h -F 2048 {} | samtools view -F 1024 -Sh - | samtools view -Subh -F 256 - | samtools fasta - ".format(args.bam))
+	os.system("samtools fasta {} ".format(args.bam))
 
 elif args.scaffold:
 	parser = argparse.ArgumentParser("""Assemblatron scaffold - Perform scaffolding using BESST""")
@@ -146,7 +125,7 @@ elif args.scaffold:
 	parser.add_argument('--fr'      , help="forward reverse orientation (i.e standard paired reads, default setting)", required=False, action="store_true")
 	parser.add_argument('--tmpdir'      , help="write reads-to-contig bam to $TMPDIR ", required=False, action="store_true")
 	parser.add_argument('--filename',required = True, help="filename of the output files (default = same as the contigs)")
-	parser.add_argument('--mem'      , help="maximum  mempry per thread (gigabytes)", type=int, default=4)
+	parser.add_argument('--mem'      , help="maximum sorting memory (gigabytes)", type=int, default=20)
         parser.add_argument('--iter'      , help="Number of itterations (default = 500000)", type=int, default=500000)
 	parser.add_argument('--cores'       ,type=int, default = 8, help="number of cores (default = 2)", required=False)
         parser.add_argument('-q'       ,type=int, help="minimum mapping quality for scaffolding", required=False)
@@ -163,9 +142,7 @@ elif args.scaffold:
 		args.bam="{}/{}.bam".format(args.output,args.prefix)
 
 	os.system("mkdir -p {}".format(args.output))
-	os.system("bwa index {}".format(args.contigs))
-	os.system("bwa mem -p -t {} {} {} | samtools view -Sbh - | samtools sort -@ {} -m {}G - > {}".format(args.cores,args.contigs,args.fastq,args.cores,args.mem,args.bam))
-	os.system("samtools index {}".format(args.bam))
+	os.system("minimap2 -a -x sr -I6G -t {} {} {} | samtools view -Sbh - | sambamba sort -t {} -m {}G /dev/stdin -o /dev/stdout > {}".format(args.cores,args.contigs,args.fastq,args.cores,args.mem,args.bam))
 
 	if args.rf:
 		besst="runBESST -c {} -f {} -orientation rf -o {} -plots --iter {}".format(args.contigs,args.bam,args.output,args.iter)
@@ -186,21 +163,23 @@ elif args.fastq:
 	parser.add_argument('--bam',required = True,type=str, help="input bam (aligned reads)")
 	parser.add_argument('--cores'       ,type=int, default = 8, help="number of cores (default = 2)", required=False)
 	parser.add_argument('--sort'      , help="sort the  output fastq based on the read names(required for later aligning paired-reads)", required=False, action="store_true")
-	parser.add_argument('--mem'      , help="maximum  mempry per thread (gigabytes)", type=int, default=4)
+	parser.add_argument('--mem'      , help="maximum memory (gigabytes)", type=int, default=20)
 	args= parser.parse_args()
 
 	if args.sort:
-		os.system("samtools view -h -F 2048 {} | samtools view -F 1024 -Sh - | samtools view -Subh -F 256 - | samtools sort -n -m {}G -@ {} - | samtools bam2fq -".format(args.bam,args.mem,args.cores))
+		os.system("sambamba sort -n -m {}G -t {} {} -o /dev/stdout | samtools fastq -".format(args.mem,args.cores,args.bam))
 	else:
-		os.system("samtools view -h -F 2048 {} | samtools view -F 1024 -Sh - | samtools view -Subh -F 256 - | samtools bam2fq -".format(args.bam))
+		os.system("samtools fastq {}".format(args.bam))
 
 elif args.snv:
 	parser = argparse.ArgumentParser("""Assemblatron snv - call snvs using samtools pileup and bcftools""")
 	parser.add_argument('--snv'             , help="call snv from the aligned contigs", required=False, action="store_true")
 	parser.add_argument('--bam',required = True,type=str, help="input bam (contigs)")
 	parser.add_argument('--ref',required = True,type=str, help="reference fasta")
+	parser.add_argument('-q'       ,type=int,default=10, help="minimum mapping quality of contigs (default=10)")
+	parser.add_argument('-r'       ,type=int,default=4, help="minimum number of reads supporting the SNV (default=4)")
 
 	args= parser.parse_args()
-	os.system("{}/fermikit/htsbox/htsbox pileup -cuf {} {} ".format(wd,args.ref,args.bam))
+	os.system("{}/fermikit/htsbox/htsbox pileup -d -c -V.05 -S 50 -q{} -s{} -f {} {} ".format(wd,args.q,args.r,args.ref,args.bam))
 else:
 	parser.print_help()

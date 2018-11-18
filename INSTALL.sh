@@ -11,6 +11,8 @@ python setup.py build_ext --inplace
 
 cd ..
 
+pip install matplotlib
+
 git clone https://github.com/ablab/quast.git
 cd quast
 pip install -e .
