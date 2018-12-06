@@ -26,7 +26,7 @@ The assemblatron workflow is run through the following commands:
 
 run the install script:
 ./INSTALL.sh
-The install script will download and install BESST, fermikit,kmc, bfc-kmc, and quast.
+The install script will download and install BESST, fermikit,kmc, and  bfc-kmc.
 Dependencies:
 
 	conda
@@ -34,6 +34,8 @@ Dependencies:
 	python 2.7
 	bwa
 	numpy
+    minimap2
+    sambamba
 
 Assemblatron may also be run using the singularity container:
 

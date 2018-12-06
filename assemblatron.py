@@ -11,6 +11,7 @@ sys.path.insert(0, '{}/scripts'.format(wd))
 import call
 import stats
 
+
 def assemble(args,wd):
 	fermi="{}/fermikit/fermi.kit/".format(wd)
 	bfc_path="{}/bfc".format(wd)
@@ -27,7 +28,7 @@ def assemble(args,wd):
 
 	#assemble
 	os.system( "{}/fermi2 assemble -l {} -t {} {}.fmd 2> {}.pre.gz.log | gzip -1 > {}.pre.gz".format(fermi,args.l,args.cores,args.prefix,args.prefix,args.prefix) )
-	os.system("{}/fermi2 simplify -CS -w {} -r 0.25 -R {} -d {} {}.pre.gz 2>  {}.mag.gz.log > {}.mag".format(fermi,args.w,args.r,args.r,args.prefix,args.prefix, args.prefix))
+	os.system("{}/fermi2 simplify -CS -R {} -d {} {}.pre.gz 2>  {}.mag.gz.log > {}.mag".format(fermi,args.r,args.r,args.prefix,args.prefix, args.prefix))
 
 	if args.align:
 		os.system("bwa mem -x intractg -t {} {} {}.mag | samtools view -Sbh - | sambamba sort -m 10G -t /dev/stdin -o {}.bam".format(args.cores,args.ref,args.prefix,args.threads,args.prefix))
@@ -55,7 +56,6 @@ if args.assemble:
 	parser.add_argument('--batch',type=str, default ="20g", help="batch size for multi-string indexing; 0 for single-string (default=20g)")
 	parser.add_argument('-l',type=int, default =81, help="min match (default = 81)")
 	parser.add_argument('-k',type=int, default =41, help="minimum kmer length for kmc/bfc error correction (default = 41)")
-	parser.add_argument('-w',type=int, default =4, help="minimum coverage across bubbles(default=4)")
         parser.add_argument('-r',type=float, default =0.9, help="minimum coverlap ratio between vertices (default=0.9)")
 	parser.add_argument('--align', help="align contigs to reference using bwa mem", required=False, action="store_true")
 	parser.add_argument('--ref',type=str, help="reference fasta, required for alignment of the contigs")
