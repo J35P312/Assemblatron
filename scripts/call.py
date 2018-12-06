@@ -334,7 +334,7 @@ def main(args):
                 elif contigs[contig]["orientation"][order[i]] == contigs[contig]["orientation"][order[i+1]]:
 
                     cov_between=numpy.average(coverage_contig_coverage[ contigs[contig]["chr"][order[i]] ][ int(math.floor(min([contigs[contig]["pos"][order[i]],contigs[contig]["pos"][order[i+1]]])/100.0)):int(math.floor(max([contigs[contig]["pos"][order[i]],contigs[contig]["pos"][order[i+1]]])/100.0)) ])
-                    print ["DEBUG",contigs[contig]["chr"][order[i]],min([contigs[contig]["pos"][order[i]] ,int(math.floor(min([contigs[contig]["pos"][order[i]],contigs[contig]["pos"][order[i+1]]])/100.0)) , int(math.floor(max([contigs[contig]["pos"][order[i]],contigs[contig]["pos"][order[i+1]]])/100.0)) ])]
+                    #print ["DEBUG",contigs[contig]["chr"][order[i]],min([contigs[contig]["pos"][order[i]] ,int(math.floor(min([contigs[contig]["pos"][order[i]],contigs[contig]["pos"][order[i+1]]])/100.0)) , int(math.floor(max([contigs[contig]["pos"][order[i]],contigs[contig]["pos"][order[i+1]]])/100.0)) ])]
                     gain=False
                     loss=False
                     if cov_between/chrom_cov[ contigs[contig]["chr"][order[i]] ] <  1-0.5/float(ploidies[ contigs[contig]["chr"][order[i]] ]):
