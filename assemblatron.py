@@ -56,7 +56,7 @@ if args.assemble:
 	parser.add_argument('--batch',type=str, default ="20g", help="batch size for multi-string indexing; 0 for single-string (default=20g)")
 	parser.add_argument('-l',type=int, default =81, help="min match (default = 81)")
 	parser.add_argument('-k',type=int, default =41, help="minimum kmer length for kmc/bfc error correction (default = 41)")
-        parser.add_argument('-r',type=float, default =0.9, help="minimum coverlap ratio between vertices (default=0.95)")
+        parser.add_argument('-r',type=float, default =0.95, help="minimum coverlap ratio between vertices (default=0.95)")
 	parser.add_argument('--align', help="align contigs to reference using bwa mem", required=False, action="store_true")
 	parser.add_argument('--ref',type=str, help="reference fasta, required for alignment of the contigs")
         parser.add_argument('--tmp',type=str,default="$TMPDIR", help="tmp directory, kmc will write tmp files here (default=$TMPDIR)")
