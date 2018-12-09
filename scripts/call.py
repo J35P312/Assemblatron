@@ -340,8 +340,6 @@ def main(args):
                     continue
 
                 if not contigs[contig]["chr"][order[i]] == contigs[contig]["chr"][order[i+1]]:
-                    if args.skip_inter:
-                        continue
                     calls.append(retrieve_var(coverage_structure,contigs,contig,"BND",order,i))
                     idx_a=int(math.floor(calls[-1]["start"]/100.0))
                     idx_b=int(math.floor(calls[-1]["end"]/100.0))
@@ -441,6 +439,9 @@ def main(args):
     
             contig_ids_a=set(contig_ids[call["chrA"]][bps_A])
             contig_ids_b=set(contig_ids[call["chrB"]][bps_B])
+
+            if args.skip_inter and call["chrA"] != call["chrB"]:
+                continue
 
 
             INFO="SVTYPE={};MAPQ={},{};CIGAR={},{};ORIENTATION={},{},ALNLEN={},{};CTGCOV={},{},;COV={},{};NEIGHBOURS={},{}".format(call["type"],call["qa"],call["qb"],call["cigara"],call["cigarb"],call["oa"],call["ob"],call["lena"],call["lenb"],call["cova"],call["covb"],call["covA"],call["covB"],len(contig_ids_a),len(contig_ids_b));
