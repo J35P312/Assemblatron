@@ -10,6 +10,8 @@ def header():
     "##FILTER=<ID=MinLen,Description=\"Variant smaller than the minimum variant limit\">",
     "##FILTER=<ID=MaxCTG,Description=\"Too many contigs at the breakpoint\">",
     "##FILTER=<ID=MaxCov,Description=\"Too high coverage at the breakpoints\">",
+    "##FILTER=<ID=ZeroPloidy,Description=\"less than 1X coverage across the chromosome\">",
+    "##FILTER=<ID=MaxNeighbours,Description=\"too many calls withing a 1kb region\">",
     "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">",
     "##INFO=<ID=SVTYPE,Number=1,Type=String,Description=\"Type of structural variant\">",
     "##INFO=<ID=INSCTG,Number=2,Type=String,Description=\"Sequence of the insertion\">", 
@@ -21,9 +23,9 @@ def header():
     "##INFO=<ID=MAPQ,Number=2,Type=Integer,Description=\"Mapping quality of the two alignments\">",
     "##INFO=<ID=ALNLEN,Number=2,Type=Integer,Description=\"Length(bp) of the two alignments\">", 
     "##INFO=<ID=CTGCOV,Number=2,Type=Float,Description=\"Number of contigs at the breakpoints\">",
-    "##INFO=<ID=COVA,Number=1,Type=Float,Description=\"coverage at the first breakpoint\">",
-    "##INFO=<ID=COVB,Number=1,Type=Float,Description=\"coverage at the second breakpoint\">",
+    "##INFO=<ID=COV,Number=2,Type=Float,Description=\"coverage at the breakpoints\">",
     "##INFO=<ID=COVM,Number=1,Type=Float,Description=\"coverage between between the breakpoints\">",
+    "##INFO=<ID=NEIGHBOURS,Number=2,Type=Float,Description=\"Number of SV contigs within a 500 bp radius\">",
 
 ]
     print "\n".join(header)
@@ -38,7 +40,7 @@ def compute_aln_length(cigar):
     return length
 
 
-def call_cigar_var(aln,min_len,max_cov,coverage_structure):
+def call_cigar_var(aln,min_len,max_ctg,coverage_structure):
     cigar_calls=[]
     length=0
     #compute the length of the contig
@@ -66,8 +68,8 @@ def call_cigar_var(aln,min_len,max_cov,coverage_structure):
                 end=length+pos-1
 
             FILTER="PASS"
-            if covb >= max_cov or cova >= max_cov:
-                FILTER="MaxCov"
+            if covb >= max_ctg or cova >= max_ctg:
+                FILTER="maxCTG"
             zygosity="1/1"
             if covb >= het_lim or cova >= het_lim:
                 zygosity="0/1"
@@ -98,8 +100,16 @@ def retrieve_var(coverage_structure,contigs,contig,var,order,i):
     
     index_a=int(math.floor(posa/100.0))
     index_b=int(math.floor(posb/100.0))
+    if index_a-1 > 0:
+        cova=max(coverage_structure[contigs[contig]["chr"][order[i]]] [ index_a-1:index_a+2] )
+    else:
+        cova=max(coverage_structure[contigs[contig]["chr"][order[i]]] [ 0:index_a+2] )
+    if index_b-1 > 0:
+        covb=max(coverage_structure[contigs[contig]["chr"][order[i+1]]] [ index_b-1:index_b+2] )
+    else:
+        covb=max(coverage_structure[contigs[contig]["chr"][order[i+1]]] [ 0:index_b+2] )
 
-    return({"type":var,"chrA":chra,"chrB":contigs[contig]["chr"][order[i+1]],"start":posa,"end":posb,"oa":contigs[contig]["orientation"][order[i]],"ob":contigs[contig]["orientation"][order[i+1]],"contig":contig,"qa":contigs[contig]["q"][order[i]],"qb":contigs[contig]["q"][order[i+1]],"cigara":contigs[contig]["cigar"][order[i]],"cigarb":contigs[contig]["cigar"][order[i+1]],"call":i,"lena":compute_aln_length(contigs[contig]["cigar"][order[i]]),"lenb":compute_aln_length(contigs[contig]["cigar"][order[i+1]]),"cova":coverage_structure[chra][ index_a ] , "covb":coverage_structure[contigs[contig]["chr"][order[i+1]]] [ index_b] })
+    return({"type":var,"chrA":chra,"chrB":contigs[contig]["chr"][order[i+1]],"start":posa,"end":posb,"oa":contigs[contig]["orientation"][order[i]],"ob":contigs[contig]["orientation"][order[i+1]],"contig":contig,"qa":contigs[contig]["q"][order[i]],"qb":contigs[contig]["q"][order[i+1]],"cigara":contigs[contig]["cigar"][order[i]],"cigarb":contigs[contig]["cigar"][order[i+1]],"call":i,"lena":compute_aln_length(contigs[contig]["cigar"][order[i]]),"lenb":compute_aln_length(contigs[contig]["cigar"][order[i+1]]),"cova":cova , "covb":covb })
 
 def order_segments(assigned_segments,kmer):
         #remove segments that are too short, and determine the order of segments
@@ -143,14 +153,14 @@ def main(args):
     ascii= {"\"":1,"#":2,"$":3,"%":4,"&":5,"\'":6,"(":7,")":8,"*":9,"+" :10,"," :11,"-" :12,".":13,"/":14,"0":15,"1":16,"2":17,"3":18,"4":19,"5":20,"6":21,"7":22,"8":23,"9":24,":":25,";":26,"<":27,"=":28,">":29,"?":30,"@":31,"A":32,"B":33,"C":34,"D":35,"E":36,"F":37,"G":38,"H":39,"I":40,"J":41,"K":42,"L":43,"M":44,"N":45,"O":46,"P":47,"Q":48,"R":49,"S":50,"T":51,"U":52,"V":53,"W":54,"X":55,"Y":56,"Z":57,"[":58,"\\":59,"]":60,"^":61,"_":62,"`":63,"a":64,"b":65,"c":66,"d":67,"e":68,"f":69,"g":70,"h":71,"i":72,"j":73,"k":74,"l":75,"m":76,"n":77,"o":78,"p":79,"q":80,"r":81,"s":82,"t":83,"u":84,"q":85,"r":86,"s":87,"t":88,"u":89,"v":90,"w":91,"x":92,"y":93,"z":94,"{":95,"|":96,"}":97,"~":98}
 
     ploidy=2
-    max_cov=ploidy*3
     kmer=args.len_ctg
     q=args.q
     min_len=args.min_size
     complex_dist=5000
     ins_dist=100
     duplicate_dist=10
-    max_cov=args.max_coverage
+    max_ctg=args.max_contigs
+
     if args.sample:
         sample=args.sample
     else:
@@ -245,17 +255,14 @@ def main(args):
             idx=numpy.where( coverage_contig_coverage[chromosome] > 0 )
             chrom_bins=sum(coverage_contig_coverage[chromosome][idx])
             n_bins_chrom=len(idx[0])
-            if n_bins_chrom != 0:
-                chrom_cov[chromosome]=chrom_bins/float(n_bins_chrom)
-            else:
-                chrom_cov[chromosome]=0
-
+            chrom_cov[chromosome]=numpy.median(coverage_contig_coverage[chromosome])
             mean_coverage+=chrom_bins
             n_bins+= n_bins_chrom
 
     mean_coverage=mean_coverage/float(n_bins)
     for chromosome in coverage_contig_coverage:
         ploidies[chromosome]=ploidy*chrom_cov[chromosome]/mean_coverage
+        #print [ploidies[chromosome],chrom_cov[chromosome],chromosome,mean_coverage]
 
     #create alignment "maps" across all the contigs
     calls=[]
@@ -314,7 +321,7 @@ def main(args):
     
         if len(order) > 1:
             for i in range(0,len(order)-1):
-                #discard low quality alignments
+               
                 if len(order) == 3 and contigs[contig]["q"][order[0]] >= q and contigs[contig]["q"][order[-1]] >= q and contigs[contig]["chr"][order[0]] == contigs[contig]["chr"][order[-1]] and abs(contigs[contig]["pos"][order[0]] - contigs[contig]["pos"][order[-1]]) < ins_dist and (contigs[contig]["chr"][order[0]] != contigs[contig]["chr"][order[1]] or abs(contigs[contig]["pos"][order[0]]-contigs[contig]["pos"][order[1]]) > ins_dist ):
                     calls.append(retrieve_var(coverage_structure,contigs,contig,"INS",order,i))
                     calls[-1]["oc"]=contigs[contig]["orientation"][order[-1]]
@@ -322,53 +329,106 @@ def main(args):
                     calls[-1]["cigarc"]=contigs[contig]["cigar"][order[-1]]
                     calls[-1]["lenc"]=compute_aln_length(contigs[contig]["cigar"][order[-1]]) 
                     calls[-1]["seqb"]=contigs[contig]["sequence"][order[1]]
+                    idx_a=int(math.floor(calls[-1]["start"]/100.0))
+                    idx_b=int(math.floor(calls[-1]["end"]/100.0))
+                    calls[-1]["covA"]=coverage_contig_coverage[ contigs[contig]["chr"][order[i]] ][ idx_a ]
+                    calls[-1]["covB"]=coverage_contig_coverage[ contigs[contig]["chr"][order[i]] ][ idx_a ]
                     break
 
+                 #discard low quality alignments
                 if contigs[contig]["q"][order[i]] < q or contigs[contig]["q"][order[i+1]] < q:
                     continue
 
-                if contig_length/float(len(order)) < complex_dist and len(order) > 2:
-                    calls.append(retrieve_var(coverage_structure,contigs,contig,"BND",order,i))                
-                elif not contigs[contig]["chr"][order[i]] == contigs[contig]["chr"][order[i+1]]:
+                if not contigs[contig]["chr"][order[i]] == contigs[contig]["chr"][order[i+1]]:
+                    if args.skip_inter:
+                        continue
                     calls.append(retrieve_var(coverage_structure,contigs,contig,"BND",order,i))
+                    idx_a=int(math.floor(calls[-1]["start"]/100.0))
+                    idx_b=int(math.floor(calls[-1]["end"]/100.0))
+                    calls[-1]["covA"]=coverage_contig_coverage[ contigs[contig]["chr"][order[i]] ][ idx_a ]
+                    calls[-1]["covB"]=coverage_contig_coverage[ contigs[contig]["chr"][order[i+1]] ][ idx_b ]
+
                 elif contigs[contig]["orientation"][order[i]] == contigs[contig]["orientation"][order[i+1]]:
 
-                    cov_between=numpy.average(coverage_contig_coverage[ contigs[contig]["chr"][order[i]] ][ int(math.floor(min([contigs[contig]["pos"][order[i]],contigs[contig]["pos"][order[i+1]]])/100.0)):int(math.floor(max([contigs[contig]["pos"][order[i]],contigs[contig]["pos"][order[i+1]]])/100.0)) ])
-                    #print ["DEBUG",contigs[contig]["chr"][order[i]],min([contigs[contig]["pos"][order[i]] ,int(math.floor(min([contigs[contig]["pos"][order[i]],contigs[contig]["pos"][order[i+1]]])/100.0)) , int(math.floor(max([contigs[contig]["pos"][order[i]],contigs[contig]["pos"][order[i+1]]])/100.0)) ])]
+                    calls.append(retrieve_var(coverage_structure,contigs,contig,"BND",order,i)) 
+
+                    if calls[-1]["end"] < calls[-1]["start"]:
+                        tmp=calls[-1]["end"]
+                        calls[-1]["end"]=calls[-1]["start"]
+                        calls[-1]["start"]=tmp
+
+
+                    idx_a=int(math.floor(calls[-1]["start"]/100.0))
+                    idx_b=int(math.floor(calls[-1]["end"]/100.0))
+
+                    cov_between=numpy.average(coverage_contig_coverage[ contigs[contig]["chr"][order[i]] ][ idx_a:idx_b+1 ])
+                    calls[-1]["cov_between"]=cov_between
+                    calls[-1]["covA"]=coverage_contig_coverage[ contigs[contig]["chr"][order[i]] ][ idx_a ]
+                    calls[-1]["covB"]=coverage_contig_coverage[ contigs[contig]["chr"][order[i]] ][ idx_b ]
+                   
                     gain=False
                     loss=False
-                    if cov_between/chrom_cov[ contigs[contig]["chr"][order[i]] ] <  1-0.5/float(ploidies[ contigs[contig]["chr"][order[i]] ]):
-                        loss=True
-                    elif cov_between/chrom_cov[ contigs[contig]["chr"][order[i]] ] >  1+0.5/float(ploidies[ contigs[contig]["chr"][order[i]] ]):
-                        gain=True
-
-                    if contigs[contig]["orientation"][order[i]] == "+":
-                        if contigs[contig]["pos"][order[i]] < contigs[contig]["pos"][order[i+1]]:
-                            if loss:
-                                calls.append(retrieve_var(coverage_structure,contigs,contig,"DEL",order,i))
+                    if ploidies[ contigs[contig]["chr"][order[i]] ] > 0:
+                        if cov_between/chrom_cov[ contigs[contig]["chr"][order[i]] ] <  abs(1-0.5/float(ploidies[ contigs[contig]["chr"][order[i]] ])):
+                            loss=True
+                        elif cov_between/chrom_cov[ contigs[contig]["chr"][order[i]] ] >  1+0.5/float(ploidies[ contigs[contig]["chr"][order[i]] ]):
+                            gain=True
+                    
+                        if contigs[contig]["orientation"][order[i]] == "+":
+                            if contigs[contig]["pos"][order[i]] < contigs[contig]["pos"][order[i+1]]:
+                                if loss:
+                                    calls[-1]["type"]="DEL"
                             else:
-                                calls.append(retrieve_var(coverage_structure,contigs,contig,"BND",order,i))
-
+                                if gain:
+                                    calls[-1]["type"]="TDUP"
                         else:
-                            if gain:
-                                calls.append(retrieve_var(coverage_structure,contigs,contig,"TDUP",order,i))
+                            if contigs[contig]["pos"][order[i]] > contigs[contig]["pos"][order[i+1]]:
+                                if loss:
+                                    calls[-1]["type"]="DEL"
                             else:
-                                calls.append(retrieve_var(coverage_structure,contigs,contig,"BND",order,i))
-
-                    else:
-                        if contigs[contig]["pos"][order[i]] > contigs[contig]["pos"][order[i+1]]:
-                            if loss:
-                                calls.append(retrieve_var(coverage_structure,contigs,contig,"DEL",order,i))
-                            else:
-                                calls.append(retrieve_var(coverage_structure,contigs,contig,"BND",order,i))
-                        else:
-                            if gain:
-                                calls.append(retrieve_var(coverage_structure,contigs,contig,"TDUP",order,i))
-                            else:
-                                calls.append(retrieve_var(coverage_structure,contigs,contig,"BND",order,i))
-
+                                if gain:
+                                    calls[-1]["type"]="TDUP"
                 else:
+
                     calls.append(retrieve_var(coverage_structure,contigs,contig,"INV",order,i))
+
+                    if calls[-1]["end"] < calls[-1]["start"]:
+                        tmp=calls[-1]["end"]
+                        calls[-1]["end"]=calls[-1]["start"]
+                        calls[-1]["start"]=tmp
+
+                    idx_a=int(math.floor(calls[-1]["start"]/100.0))
+                    idx_b=int(math.floor(calls[-1]["end"]/100.0))
+                    cov_between=numpy.average(coverage_contig_coverage[ contigs[contig]["chr"][order[i]] ][ idx_a:idx_b+1 ])
+                    calls[-1]["cov_between"]=cov_between
+                    calls[-1]["covA"]=coverage_contig_coverage[ contigs[contig]["chr"][order[i]] ][ idx_a ]
+                    calls[-1]["covB"]=coverage_contig_coverage[ contigs[contig]["chr"][order[i]] ][ idx_b ]
+
+
+
+    breakpoints={}
+    contig_ids={}
+    for call in calls:
+        if not call["chrA"] in breakpoints:
+            breakpoints[call["chrA"]]=[]
+            contig_ids[call["chrA"]]=[]            
+
+        if not call["chrB"] in breakpoints:
+            breakpoints[call["chrB"]]=[]
+            contig_ids[call["chrB"]]=[]
+
+                    
+        breakpoints[call["chrA"]].append(call["start"])
+        breakpoints[call["chrB"]].append(call["end"])
+
+        contig_ids[call["chrA"]].append(call["contig"])
+        contig_ids[call["chrB"]].append(call["contig"])
+
+
+        
+    for chromosome in breakpoints:
+        breakpoints[chromosome]=numpy.array(breakpoints[chromosome])
+        contig_ids[chromosome]=numpy.array(contig_ids[chromosome])
 
     het_lim=1.5
     for call in calls:
@@ -376,7 +436,14 @@ def main(args):
             variant_calls[call["chrA"]]=[]
 
         if call["type"] == "BND":
-            INFO="SVTYPE={};MAPQ={},{};CIGAR={},{};ORIENTATION={},{},ALNLEN={},{};CTGCOV={},{}".format(call["type"],call["qa"],call["qb"],call["cigara"],call["cigarb"],call["oa"],call["ob"],call["lena"],call["lenb"],call["cova"],call["covb"]);
+            bps_A=numpy.where( (breakpoints[call["chrA"]] > call["start"]-500) & (breakpoints[call["chrA"]] < call["start"]+500)  )
+            bps_B=numpy.where( (breakpoints[call["chrB"]] > call["end"]-500) & (breakpoints[call["chrB"]] < call["end"]+500)  )
+    
+            contig_ids_a=set(contig_ids[call["chrA"]][bps_A])
+            contig_ids_b=set(contig_ids[call["chrB"]][bps_B])
+
+
+            INFO="SVTYPE={};MAPQ={},{};CIGAR={},{};ORIENTATION={},{},ALNLEN={},{};CTGCOV={},{},;COV={},{};NEIGHBOURS={},{}".format(call["type"],call["qa"],call["qb"],call["cigara"],call["cigarb"],call["oa"],call["ob"],call["lena"],call["lenb"],call["cova"],call["covb"],call["covA"],call["covB"],len(contig_ids_a),len(contig_ids_b));
             VARID="{}_{}".format(call["contig"],call["call"])
         
             if call["ob"] == call["ob"]:
@@ -385,14 +452,28 @@ def main(args):
                 ALT="[{}:{}[N".format(call["chrB"],call["end"])
     
             FILTER="PASS"
-            if call["covb"] >= max_cov or call["cova"] >= max_cov:
+            if call["covb"] >= max_ctg or call["cova"] >= max_ctg:
+                FILTER="maxCTG"
+            if call["covA"] >= args.max_coverage*chrom_cov[ call["chrA"] ] or call["covB"] >= args.max_coverage*chrom_cov[ call["chrB"] ]:
                 FILTER="MaxCov"
+            if  1 > chrom_cov[ call["chrA"] ] or  1 > chrom_cov[ call["chrB"] ]:
+                FILTER="ZeroPloidy"
+            if len(contig_ids_a) > 3 or len(contig_ids_b) > 3:
+                FILTER="MaxNeighbours"
+
             zygosity="1/1"
             if call["covb"] >= het_lim or call["cova"] >= het_lim:
                 zygosity="0/1"
+
             variant_calls[call["chrA"]].append([call["start"],call["end"],"BND","{}\t{}\t{}\tN\t{}\t.\t{}\t{}\tGT\t{}".format(call["chrA"],call["start"],VARID,ALT,FILTER,INFO,zygosity)])
         elif call["type"] == "INS":
-            INFO="INSLEN={};INSCIGAR={};INSCTG={};SVTYPE={};MAPQ={},{};CIGAR={},{};ORIENTATION={},{},ALNLEN={},{};CTGCOV={},{}".format(call["lenb"],call["cigarb"],call["seqb"],call["type"],call["qa"],call["qc"],call["cigara"],call["cigarc"],call["oa"],call["oc"],call["lena"],call["lenc"],call["cova"],call["cova"]);
+            bps_A=numpy.where( (breakpoints[call["chrA"]] > call["start"]-500) & (breakpoints[call["chrA"]] < call["start"]+500)  )
+            bps_B=numpy.where( (breakpoints[call["chrB"]] > call["end"]-500) & (breakpoints[call["chrB"]] < call["end"]+500)  )
+    
+            contig_ids_a=set(contig_ids[call["chrA"]][bps_A])
+            contig_ids_b=set(contig_ids[call["chrB"]][bps_B])
+
+            INFO="INSLEN={};INSCIGAR={};INSCTG={};SVTYPE={};MAPQ={},{};CIGAR={},{};ORIENTATION={},{},ALNLEN={},{};CTGCOV={},{};COV={},{};NEIGHBOURS={},{}".format(call["lenb"],call["cigarb"],call["seqb"],call["type"],call["qa"],call["qc"],call["cigara"],call["cigarc"],call["oa"],call["oc"],call["lena"],call["lenc"],call["cova"],call["cova"],call["covA"],call["covA"],len(contig_ids_a),len(contig_ids_b));
 
             VARID="{}_{}".format(call["contig"],call["call"])
             ALT="<{}>".format(call["type"])
@@ -400,28 +481,43 @@ def main(args):
             length= abs(call["start"]-call["end"])+1
             if length < min_len:
                 FILTER="MinLen"
-            if call["cova"] >= max_cov:
+            if call["cova"] >= max_ctg:
+                FILTER="maxCTG"
+            if call["covA"] >= args.max_coverage*chrom_cov[ call["chrA"] ]:
                 FILTER="MaxCov"
+            if  1 > chrom_cov[ call["chrA"]]:
+                FILTER="ZeroPloidy"
+            if len(contig_ids_a) > 3 or len(contig_ids_b) > 3:
+                FILTER="MaxNeighbours"
+
             zygosity="1/1"
             if call["covb"] >= het_lim or call["cova"] >= het_lim:
                 zygosity="0/1"
             variant_calls[call["chrA"]].append([call["start"],call["end"],ALT,"{}\t{}\t{}\tN\t{}\t.\t{}\t{}\tGT\t{}".format(call["chrA"],call["start"],VARID,ALT,FILTER,INFO,zygosity)])
 
         else: 
-            if call["end"] < call["start"]:
-                tmp=call["end"]
-                call["end"]=call["start"]
-                call["start"]=tmp
+            bps_A=numpy.where( (breakpoints[call["chrA"]] > call["start"]-500) & (breakpoints[call["chrA"]] < call["start"]+500)  )
+            bps_B=numpy.where( (breakpoints[call["chrB"]] > call["end"]-500) & (breakpoints[call["chrB"]] < call["end"]+500)  )
+            contig_ids_a=set(contig_ids[call["chrA"]][bps_A])
+            contig_ids_b=set(contig_ids[call["chrB"]][bps_B])
 
-            INFO="END={};SVLEN={};SVTYPE={};MAPQ={},{};CIGAR={},{};ORIENTATION={},{},ALNLEN={},{};CTGCOV={},{};COVM={}".format(call["end"],abs(call["start"]-call["end"])+1,call["type"],call["qa"],call["qb"],call["cigara"],call["cigarb"],call["oa"],call["ob"],call["lena"],call["lenb"],call["cova"],call["covb"],cov_between);
+            INFO="END={};SVLEN={};SVTYPE={};MAPQ={},{};CIGAR={},{};ORIENTATION={},{},ALNLEN={},{};CTGCOV={},{};COV={},{};COVM={};NEIGHBOURS={},{}".format(call["end"],abs(call["start"]-call["end"])+1,call["type"],call["qa"],call["qb"],call["cigara"],call["cigarb"],call["oa"],call["ob"],call["lena"],call["lenb"],call["cova"],call["covb"],call["covA"],call["covB"],call["cov_between"],len(contig_ids_a),len(contig_ids_b));
             VARID="{}_{}".format(call["contig"],call["call"])
             ALT="<{}>".format(call["type"])
             FILTER="PASS"
             length= abs(call["start"]-call["end"])+1
             if length < min_len:
                 FILTER="MinLen"
-            if call["covb"] >= max_cov or call["cova"] >= max_cov:
+            if call["covb"] >= max_ctg or call["cova"] >= max_ctg:
+                FILTER="maxCTG"
+
+            if call["covA"] >= args.max_coverage*chrom_cov[ call["chrA"] ] or call["covB"] >= args.max_coverage*chrom_cov[ call["chrB"] ]:
                 FILTER="MaxCov"
+            if  1 > chrom_cov[ call["chrA"]] or  1 > chrom_cov[ call["chrB"] ]:
+                FILTER="ZeroPloidy"
+            if len(contig_ids_a) > 3 or len(contig_ids_b) > 3:
+                FILTER="MaxNeighbours"
+
             zygosity="1/1"
             if call["covb"] >= het_lim or call["cova"] >= het_lim:
                 zygosity="0/1"
@@ -436,7 +532,7 @@ def main(args):
             if not content[2] in variant_calls:
                 variant_calls[content[2]]=[]
 
-            call_list=call_cigar_var(content,min_len,max_cov,coverage_structure)   
+            call_list=call_cigar_var(content,min_len,max_ctg,coverage_structure)   
             variant_calls[content[2]]+=call_list 
                 
     for chromosome in chromosome_order:
@@ -456,8 +552,4 @@ def main(args):
             else: 
                 last_call=call
                 print call[-1]
-
-
-
-
 

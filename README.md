@@ -94,11 +94,11 @@ The statistics module supports any number of fasta files. Type --help for more i
 NOTE: use absolute path for the output directory.
 
 # SV
-Call SV. Assemblatron will calssify variants as DEL, INV, BND (translocation or complex), INS, and TDUP.
+Call SV. Assemblatron will classify variants as DEL, INV, BND (translocation or complex), INS, and TDUP.
 
     python assemblatron.py --sv --bam <contigs.bam> > out.vcf
 
-The output is  printed to stdout
+The output is  printed to stdout. Note, the SV-caller assumes that the base qualitiy scores represent the base coverage. 
 
 other options:
 
