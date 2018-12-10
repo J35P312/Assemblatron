@@ -28,12 +28,12 @@ def assemble(args,wd):
 
 	#assemble
 	os.system( "{}/fermi2 assemble -l {} -t {} {}.fmd 2> {}.pre.gz.log | gzip -1 > {}.pre.gz".format(fermi,args.l,args.cores,args.prefix,args.prefix,args.prefix) )
-	os.system("{}/fermi2 simplify -CS -R {} -d {} {}.pre.gz 2>  {}.mag.gz.log > {}.mag".format(fermi,args.r,args.r,args.prefix,args.prefix, args.prefix))
+	os.system("{}/fermi2 simplify -CS -T {} -R {} -d {} {}.pre.gz 2>  {}.mag.gz.log > {}.mag".format(fermi,2*args.l,args.r,args.r,args.prefix,args.prefix, args.prefix))
 
 	if args.align:
 		os.system("bwa mem -x intractg -t {} {} {}.mag | samtools view -Sbh - | sambamba sort -m 10G -t /dev/stdin -o {}.bam".format(args.cores,args.ref,args.prefix,args.threads,args.prefix))
 
-version = "0.6.0"
+version = "0.7.0"
 parser = argparse.ArgumentParser("""Assemblatron: a de novo assembly  pipeline""".format(version),add_help=False)
 parser.add_argument('--assemble'       , help="Perform de novo assembly using the Fermi2 assembler", required=False, action="store_true")
 parser.add_argument('--scaffold'      , help="perform scaffolding using BESST", required=False, action="store_true")
