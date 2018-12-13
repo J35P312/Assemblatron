@@ -28,7 +28,7 @@ def assemble(args,wd):
 
 	#assemble
 	os.system( "{}/fermi2 assemble -l {} -t {} {}.fmd 2> {}.pre.gz.log | gzip -1 > {}.pre.gz".format(fermi,args.l,args.cores,args.prefix,args.prefix,args.prefix) )
-	os.system("{}/fermi2 simplify -CS -T {} -R {} -d {} {}.pre.gz 2>  {}.mag.gz.log > {}.mag".format(fermi,2*args.l,args.r,args.r,args.prefix,args.prefix, args.prefix))
+	os.system("{}/fermi2 simplify -CS -R {} -d {} {}.pre.gz 2>  {}.mag.gz.log > {}.mag".format(fermi,args.r,args.r,args.prefix,args.prefix, args.prefix))
 
 	if args.align:
 		os.system("bwa mem -x intractg -t {} {} {}.mag | samtools view -Sbh - | sambamba sort -m 10G -t /dev/stdin -o {}.bam".format(args.cores,args.ref,args.prefix,args.threads,args.prefix))
@@ -56,7 +56,7 @@ if args.assemble:
 	parser.add_argument('--batch',type=str, default ="20g", help="batch size for multi-string indexing; 0 for single-string (default=20g)")
 	parser.add_argument('-l',type=int, default =81, help="min match (default = 81)")
 	parser.add_argument('-k',type=int, default =41, help="minimum kmer length for kmc/bfc error correction (default = 41)")
-        parser.add_argument('-r',type=float, default =0.8, help="minimum coverlap ratio between vertices (default=0.8)")
+        parser.add_argument('-r',type=float, default =0.9, help="minimum coverlap ratio between vertices (default=0.8)")
 	parser.add_argument('--align', help="align contigs to reference using bwa mem", required=False, action="store_true")
 	parser.add_argument('--ref',type=str, help="reference fasta, required for alignment of the contigs")
         parser.add_argument('--tmp',type=str,default="$TMPDIR", help="tmp directory, kmc will write tmp files here (default=$TMPDIR)")
