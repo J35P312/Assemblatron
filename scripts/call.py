@@ -321,7 +321,7 @@ def main(args):
     
         if len(order) > 1:
             for i in range(0,len(order)-1):
-               
+                
                 if len(order) == 3 and contigs[contig]["q"][order[0]] >= q and contigs[contig]["q"][order[-1]] >= q and contigs[contig]["chr"][order[0]] == contigs[contig]["chr"][order[-1]] and abs(contigs[contig]["pos"][order[0]] - contigs[contig]["pos"][order[-1]]) < ins_dist and (contigs[contig]["chr"][order[0]] != contigs[contig]["chr"][order[1]] or abs(contigs[contig]["pos"][order[0]]-contigs[contig]["pos"][order[1]]) > ins_dist ):
                     calls.append(retrieve_var(coverage_structure,contigs,contig,"INS",order,i))
                     calls[-1]["oc"]=contigs[contig]["orientation"][order[-1]]
@@ -367,9 +367,9 @@ def main(args):
                     gain=False
                     loss=False
                     if ploidies[ contigs[contig]["chr"][order[i]] ] > 0:
-                        if cov_between/chrom_cov[ contigs[contig]["chr"][order[i]] ] <  abs(1-0.5/float(ploidies[ contigs[contig]["chr"][order[i]] ])):
+                        if cov_between/chrom_cov[ contigs[contig]["chr"][order[i]] ] <  abs(1-0.4/float(ploidies[ contigs[contig]["chr"][order[i]] ])):
                             loss=True
-                        elif cov_between/chrom_cov[ contigs[contig]["chr"][order[i]] ] >  1+0.5/float(ploidies[ contigs[contig]["chr"][order[i]] ]):
+                        elif cov_between/chrom_cov[ contigs[contig]["chr"][order[i]] ] >  1+0.4/float(ploidies[ contigs[contig]["chr"][order[i]] ]):
                             gain=True
                     
                         if contigs[contig]["orientation"][order[i]] == "+":
@@ -386,6 +386,15 @@ def main(args):
                             else:
                                 if gain:
                                     calls[-1]["type"]="TDUP"
+
+                        #there is no distance between the breakpoints; usually this is an insertion of sequence that do not align properly ( 0 <= mapQ <= minQ )
+                        if abs(calls[-1]["start"] - calls[-1]["end"]) < 5:
+                            calls[-1]["type"]="INS"
+                            calls[-1]["cigarc"]="."
+                            calls[-1]["lenc"]="." 
+                            calls[-1]["seqb"]="."
+                            calls[-1]["oc"]="."
+                            calls[-1]["qc"]="."
                 else:
 
                     calls.append(retrieve_var(coverage_structure,contigs,contig,"INV",order,i))
@@ -401,6 +410,9 @@ def main(args):
                     calls[-1]["cov_between"]=cov_between
                     calls[-1]["covA"]=coverage_contig_coverage[ contigs[contig]["chr"][order[i]] ][ idx_a ]
                     calls[-1]["covB"]=coverage_contig_coverage[ contigs[contig]["chr"][order[i]] ][ idx_b ]
+
+                    if abs(calls[-1]["start"]-calls[-1]["end"]) < 5:
+                        continue
 
 
 
@@ -440,8 +452,11 @@ def main(args):
             contig_ids_a=set(contig_ids[call["chrA"]][bps_A])
             contig_ids_b=set(contig_ids[call["chrB"]][bps_B])
 
-            if args.skip_inter and call["chrA"] != call["chrB"]:
+            if args.max_size and call["chrA"] != call["chrB"]:
                 continue
+            elif args.max_size:
+                if abs(call["start"]-call["end"]) > args.max_size:
+                    continue
 
 
             INFO="SVTYPE={};MAPQ={},{};CIGAR={},{};ORIENTATION={},{},ALNLEN={},{};CTGCOV={},{},;COV={},{};NEIGHBOURS={},{}".format(call["type"],call["qa"],call["qb"],call["cigara"],call["cigarb"],call["oa"],call["ob"],call["lena"],call["lenb"],call["cova"],call["covb"],call["covA"],call["covB"],len(contig_ids_a),len(contig_ids_b));
@@ -502,7 +517,7 @@ def main(args):
             contig_ids_a=set(contig_ids[call["chrA"]][bps_A])
             contig_ids_b=set(contig_ids[call["chrB"]][bps_B])
 
-            INFO="END={};SVLEN={};SVTYPE={};MAPQ={},{};CIGAR={},{};ORIENTATION={},{},ALNLEN={},{};CTGCOV={},{};COV={},{};COVM={};NEIGHBOURS={},{}".format(call["end"],abs(call["start"]-call["end"])+1,call["type"],call["qa"],call["qb"],call["cigara"],call["cigarb"],call["oa"],call["ob"],call["lena"],call["lenb"],call["cova"],call["covb"],call["covA"],call["covB"],call["cov_between"],len(contig_ids_a),len(contig_ids_b));
+            INFO="END={};SVLEN={};SVTYPE={};MAPQ={},{};CIGAR={},{};ORIENTATION={},{},ALNLEN={},{};CTGCOV={},{};COV={},{};COVM={};NEIGHBOURS={},{}".format(call["end"],abs(call["start"]-call["end"]),call["type"],call["qa"],call["qb"],call["cigara"],call["cigarb"],call["oa"],call["ob"],call["lena"],call["lenb"],call["cova"],call["covb"],call["covA"],call["covB"],call["cov_between"],len(contig_ids_a),len(contig_ids_b));
             VARID="{}_{}".format(call["contig"],call["call"])
             ALT="<{}>".format(call["type"])
             FILTER="PASS"
@@ -511,6 +526,10 @@ def main(args):
                 FILTER="MinLen"
             if call["covb"] >= max_ctg or call["cova"] >= max_ctg:
                 FILTER="maxCTG"
+
+            if args.max_size:
+                if abs(call["start"]-call["end"]) > args.max_size:
+                    continue
 
             if call["covA"] >= args.max_coverage*chrom_cov[ call["chrA"] ] or call["covB"] >= args.max_coverage*chrom_cov[ call["chrB"] ]:
                 FILTER="MaxCov"
@@ -553,4 +572,5 @@ def main(args):
             else: 
                 last_call=call
                 print call[-1]
+
 

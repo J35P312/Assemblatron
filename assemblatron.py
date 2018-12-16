@@ -28,7 +28,7 @@ def assemble(args,wd):
 
 	#assemble
 	os.system( "{}/fermi2 assemble -l {} -t {} {}.fmd 2> {}.pre.gz.log | gzip -1 > {}.pre.gz".format(fermi,args.l,args.cores,args.prefix,args.prefix,args.prefix) )
-	os.system("{}/fermi2 simplify -CS -T {} -R {} -d {} {}.pre.gz 2>  {}.mag.gz.log > {}.mag".format(fermi,2*args.l,args.r,args.r,args.prefix,args.prefix, args.prefix))
+	os.system("{}/fermi2 simplify -CS -R {} -d {} {}.pre.gz 2>  {}.mag.gz.log > {}.mag".format(fermi,args.r,args.r,args.prefix,args.prefix, args.prefix))
 
 	if args.align:
 		os.system("bwa mem -x intractg -t {} {} {}.mag | samtools view -Sbh - | sambamba sort -m 10G -t /dev/stdin -o {}.bam".format(args.cores,args.ref,args.prefix,args.threads,args.prefix))
@@ -56,10 +56,10 @@ if args.assemble:
 	parser.add_argument('--batch',type=str, default ="20g", help="batch size for multi-string indexing; 0 for single-string (default=20g)")
 	parser.add_argument('-l',type=int, default =81, help="min match (default = 81)")
 	parser.add_argument('-k',type=int, default =41, help="minimum kmer length for kmc/bfc error correction (default = 41)")
-        parser.add_argument('-r',type=float, default =0.8, help="minimum coverlap ratio between vertices (default=0.8)")
+	parser.add_argument('-r',type=float, default =0.9, help="minimum coverlap ratio between vertices (default=0.9)")
 	parser.add_argument('--align', help="align contigs to reference using bwa mem", required=False, action="store_true")
 	parser.add_argument('--ref',type=str, help="reference fasta, required for alignment of the contigs")
-        parser.add_argument('--tmp',type=str,default="$TMPDIR", help="tmp directory, kmc will write tmp files here (default=$TMPDIR)")
+	parser.add_argument('--tmp',type=str,default="$TMPDIR", help="tmp directory, kmc will write tmp files here (default=$TMPDIR)")
 	args= parser.parse_args()
 
 	if not os.path.isdir(args.tmp):
@@ -79,11 +79,11 @@ elif args.sv:
 	parser.add_argument('--bam',required = True,type=str, help="input bam (contigs)")
 	parser.add_argument('--q',type=int, default =10 ,help="minimum allowed mapping quality(default = 10)", required=False)
 	parser.add_argument('--len_ctg'       ,type=int, default = 40, help="minimum uniquelly mapped contig length(default = 40)", required=False)
-	parser.add_argument('--skip_inter'       ,action="store_true", help="Skip interchromosomal variants", required=False)
-	parser.add_argument('--max_contigs'       ,type=int, default = 6, help="filter breakpoint regions containing too many contings (default=6 contigs)", required=False)
-	parser.add_argument('--max_coverage'       ,type=int, default = 5, help="filter breakpoint regions located in high coverage regions (default=5*avg_chromosomal_coverage)", required=False)
+	parser.add_argument('--max_size'       ,type=int, help="filter variants exceeding the following value (bp) (default=infinity)", required=False)
+	parser.add_argument('--max_contigs'       ,type=int, default = 8, help="filter breakpoint regions containing too many contings (default=8 contigs)", required=False)
+	parser.add_argument('--max_coverage'       ,type=int, default = 3, help="filter breakpoint regions located in high coverage regions (default=3*avg_chromosomal_coverage)", required=False)
 	parser.add_argument('--min_size'       ,type=int, default = 50, help="minimum variant size)", required=False)  
-        parser.add_argument('--sample'       ,type=str, help="sample id, as shown in the format column", required=False)
+	parser.add_argument('--sample'       ,type=str, help="sample id, as shown in the format column", required=False)
 	args= parser.parse_args()
 
 	call.main(args)
@@ -129,10 +129,10 @@ elif args.scaffold:
 	parser.add_argument('--tmpdir'      , help="write reads-to-contig bam to $TMPDIR ", required=False, action="store_true")
 	parser.add_argument('--filename',required = True, help="filename of the output files (default = same as the contigs)")
 	parser.add_argument('--mem'      , help="maximum sorting memory (gigabytes)", type=int, default=20)
-        parser.add_argument('--iter'      , help="Number of itterations (default = 500000)", type=int, default=500000)
-	parser.add_argument('--cores'       ,type=int, default = 8, help="number of cores (default = 2)", required=False)
-        parser.add_argument('-q'       ,type=int, help="minimum mapping quality for scaffolding", required=False)
-        parser.add_argument('-p'       ,type=int, help="minimum number of read-pairs to create edge", required=False)
+	parser.add_argument('--iter'      , help="Number of itterations (default = 500000)", type=int, default=500000)
+	parser.add_argument('--cores'       ,type=int, default = 8, help="number of cores (default = 8)", required=False)
+	parser.add_argument('-q'       ,type=int, help="minimum mapping quality for scaffolding", required=False)
+	parser.add_argument('-p'       ,type=int, help="minimum number of read-pairs to create edge", required=False)
 	args= parser.parse_args()
 
 	args.prefix=args.filename
@@ -156,7 +156,7 @@ elif args.scaffold:
 		besst+= " --min_mapq {}".format(args.q)
 
 	if args.p:
-                besst+= " -e {}".format(args.p)
+		besst+= " -e {}".format(args.p)
 
 	os.system(besst)
 elif args.fastq:
