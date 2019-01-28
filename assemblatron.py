@@ -33,10 +33,9 @@ def assemble(args,wd):
 	if args.align:
 		os.system("bwa mem -x intractg -t {} {} {}.mag | samtools view -Sbh - | sambamba sort -m 10G -t /dev/stdin -o {}.bam".format(args.cores,args.ref,args.prefix,args.threads,args.prefix))
 
-version = "0.7.0"
+version = "1.0.0"
 parser = argparse.ArgumentParser("""Assemblatron: a de novo assembly  pipeline""".format(version),add_help=False)
 parser.add_argument('--assemble'       , help="Perform de novo assembly using the Fermi2 assembler", required=False, action="store_true")
-parser.add_argument('--scaffold'      , help="perform scaffolding using BESST", required=False, action="store_true")
 parser.add_argument('--sv'             , help="call SV from the aligned contigs", required=False, action="store_true")
 parser.add_argument('--snv'             , help="call snv from the aligned contigs", required=False, action="store_true")
 parser.add_argument('--stats'          , help="compute assembly stats from aligned contigs", required=False, action="store_true")
@@ -101,7 +100,7 @@ elif args.align:
 	parser.add_argument('--align'          , help="align contigs to reference using bwa mem", required=False, action="store_true")
 	parser.add_argument('--ref',required = True,type=str, help="reference fasta")
 	parser.add_argument('--mem'      , help="maximum  memory (gigabytes)", type=int, default=10)
-	parser.add_argument('--cores'       ,type=int, default = 8, help="number of cores (default = 2)", required=False)
+	parser.add_argument('--cores'       ,type=int, default = 8, help="number of cores (default = 8)", required=False)
 	parser.add_argument('--contigs',required = True,type=str, help="input contigs")
 	parser.add_argument('--prefix',required = True,type=str, help="output prefix")
 	args= parser.parse_args()
@@ -118,47 +117,6 @@ elif args.fasta:
 
 	os.system("samtools fasta {} ".format(args.bam))
 
-elif args.scaffold:
-	parser = argparse.ArgumentParser("""Assemblatron scaffold - Perform scaffolding using BESST""")
-	parser.add_argument('--scaffold'      , help="perform scaffolding using BESST", required=False, action="store_true")
-	parser.add_argument('--fastq',required = True,type=str, help="input paired reads")
-	parser.add_argument('--contigs',required = True,type=str, help="input contigs (fasta format)")
-	parser.add_argument('--output',required = True,type=str, help="output folder")
-	parser.add_argument('--rf'      , help="reverse forward orientation (i.e mate pair)", required=False, action="store_true")
-	parser.add_argument('--fr'      , help="forward reverse orientation (i.e standard paired reads, default setting)", required=False, action="store_true")
-	parser.add_argument('--tmpdir'      , help="write reads-to-contig bam to $TMPDIR ", required=False, action="store_true")
-	parser.add_argument('--filename',required = True, help="filename of the output files (default = same as the contigs)")
-	parser.add_argument('--mem'      , help="maximum sorting memory (gigabytes)", type=int, default=20)
-	parser.add_argument('--iter'      , help="Number of itterations (default = 500000)", type=int, default=500000)
-	parser.add_argument('--cores'       ,type=int, default = 8, help="number of cores (default = 8)", required=False)
-	parser.add_argument('-q'       ,type=int, help="minimum mapping quality for scaffolding", required=False)
-	parser.add_argument('-p'       ,type=int, help="minimum number of read-pairs to create edge", required=False)
-	args= parser.parse_args()
-
-	args.prefix=args.filename
-
-	if not args.prefix:
-		args.prefix=contigs.split("/")[-1].split(".")[0]
-	if args.tmpdir:
-		args.bam="$TMPDIR/{}.bam".format(args.prefix)
-	else:
-		args.bam="{}/{}.bam".format(args.output,args.prefix)
-
-	os.system("mkdir -p {}".format(args.output))
-	os.system("minimap2 -a -x sr -I6G -t {} {} {} | samtools view -Sbh - | sambamba sort -t {} -m {}G /dev/stdin -o /dev/stdout > {}".format(args.cores,args.contigs,args.fastq,args.cores,args.mem,args.bam))
-
-	if args.rf:
-		besst="runBESST -c {} -f {} -orientation rf -o {} -plots --iter {}".format(args.contigs,args.bam,args.output,args.iter)
-	else:
-		besst="runBESST -c {} -f {} -orientation fr -o {} -plots --iter {}".format(args.contigs,args.bam,args.output,args.iter)
-
-	if args.q:
-		besst+= " --min_mapq {}".format(args.q)
-
-	if args.p:
-		besst+= " -e {}".format(args.p)
-
-	os.system(besst)
 elif args.fastq:
 
 	parser = argparse.ArgumentParser("""Assemblatron fastq - converts bam to fastq using samtools""")
@@ -175,7 +133,7 @@ elif args.fastq:
 		os.system("samtools fastq {}".format(args.bam))
 
 elif args.snv:
-	parser = argparse.ArgumentParser("""Assemblatron snv - call snvs using samtools pileup and bcftools""")
+	parser = argparse.ArgumentParser("""Assemblatron snv - call snvs and indels usisng htsbox pileup""")
 	parser.add_argument('--snv'             , help="call snv from the aligned contigs", required=False, action="store_true")
 	parser.add_argument('--bam',required = True,type=str, help="input bam (contigs)")
 	parser.add_argument('--ref',required = True,type=str, help="reference fasta")

@@ -1,6 +1,6 @@
 # Assemblatron - De novo assembly tool kit
 
-Assemblatron is a toolkit for De novo assembly, scaffolding, and variant calling of de  novo assemblies.  type 
+Assemblatron is a toolkit for De novo assembly and variant calling of de  novo assemblies.  type 
 	python assemblatron.py --help
 
 For a help message of the avialable tools.
@@ -11,13 +11,11 @@ The full workflow involves:
 
     1: assembly using Fermi2 (similar to workflow as fermiKit)
 
-    2: scaffolding using BESST (using the same input data as for 1, or a mate pair library)
+    2: alignment of the contigs
 
-    3: alignment of the contigs
+    3: Quality control
 
-    4: Quality control
-
-    5: variant calling
+    4: variant calling
 
 However, you may start or end the analysis as any step.
 The assemblatron workflow is run through the following commands:
@@ -26,7 +24,7 @@ The assemblatron workflow is run through the following commands:
 
 run the install script:
 ./INSTALL.sh
-The install script will download and install BESST, fermikit,kmc, and  bfc-kmc.
+The install script will download and install fermikit,kmc, and  bfc-kmc.
 Dependencies:
 
 	conda
@@ -34,8 +32,8 @@ Dependencies:
 	python 2.7
 	bwa
 	numpy
-    minimap2
-    sambamba
+	minimap2
+	sambamba
 
 Assemblatron may also be run using the singularity container:
 
@@ -66,15 +64,6 @@ The main differences between fermikit and Assemblatron is that Assemblatron uses
 For more info on Fermikit, visit the Fermikit website:
 
 		https://github.com/lh3/fermikit
-
-# Scaffolding
-
-Perform Scaffolding using BESST. 
-
-		python assemblatron.py scaffold --contigs <contigs> --fastq <fastq> --output <output> --tmpdir
-	
-Where <Contigs> is a fasta file containing the contigs produced through de novo assembly, and <fastq> is a fastq file containing paired-end reads. The scaffolding process including alignment takes about 10 hours on a 16 core machine when using a 30X whole genome for scaffolding.
-When running BESST on the assemblatron output contigs, the N50 is usually improved by a factor of 10 or so.
 
 # Align
 Assemblatron performs alignment using bwa mem. The output is printed to a file named <prefix.bam>. The input is asssumed to be contigs produced through any assembly process.
@@ -153,6 +142,5 @@ Cite the components that you used, as well as the Assemblatron git hub page.
 
 		https://github.com/lh3/fermikit
 
-	If you performed scaffolding, please cite the BESST paper:
 
-		https://github.com/ksahlin/BESST
+	
