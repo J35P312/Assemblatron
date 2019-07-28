@@ -15,20 +15,26 @@ import stats
 def assemble(args,wd):
 	fermi="{}/fermikit/fermi.kit/".format(wd)
 	bfc_path="{}/bfc".format(wd)
+	if not args.noec:
+		#run kmc
+		kmc_prefix="{}.kmc".format(args.prefix)
+		kmc="kmc -k{} -m30 {} {} {}".format(args.k,args.fastq,kmc_prefix,args.tmp)
+		os.system(kmc)
 
-	#run kmc
-	kmc_prefix="{}.kmc".format(args.prefix)
-	kmc="kmc -k{} -m30 {} {} {}".format(args.k,args.fastq,kmc_prefix,args.tmp)
-	os.system(kmc)
-
-	#apply bloom filter and build the index
-	ropebwt="{}/ropebwt2 -m {} -dNCr - > {}.fmd 2> {}.fmd.log".format(fermi,args.batch,args.prefix,args.prefix)
-	bfc="{}/bfc-kmc -k {} -T -t {} {} {} 2> {}.flt.fq.gz.log".format(bfc_path,args.k,args.cores,kmc_prefix,args.fastq,args.prefix)
-	os.system("{} | {}".format(bfc,ropebwt))
+		#apply bloom filter and build the index
+		ropebwt="{}/ropebwt2 -m {} -dNCr - > {}.fmd 2> {}.fmd.log".format(fermi,args.batch,args.prefix,args.prefix)
+		bfc="{}/bfc-kmc -k {} -T -t {} {} {} 2> {}.flt.fq.gz.log".format(bfc_path,args.k,args.cores,kmc_prefix,args.fastq,args.prefix)
+		os.system("{} | {}".format(bfc,ropebwt))
+	else:
+		ropebwt="{}/ropebwt2 -m {} -dNCr {} > {}.fmd".format(fermi,args.batch,args.fastq,args.prefix)
+		os.system(ropebwt)
 
 	#assemble
-	os.system( "{}/fermi2 assemble -l {} -t {} {}.fmd 2> {}.pre.gz.log | gzip -1 > {}.pre.gz".format(fermi,args.l,args.cores,args.prefix,args.prefix,args.prefix) )
-	os.system("{}/fermi2 simplify -CS -R {} -d {} {}.pre.gz 2>  {}.mag.gz.log > {}.mag".format(fermi,args.r,args.r,args.prefix,args.prefix, args.prefix))
+	os.system( "{}/fermi2 assemble -l {} -t {} {}.fmd | gzip -1 > {}.pre.gz".format(fermi,args.l,args.cores,args.prefix,args.prefix,args.prefix) )
+	if args.A:
+		os.system("{}/fermi2 simplify -CA -R {} -d {} {}.pre.gz 2>  {}.mag.gz.log > {}.mag".format(fermi,args.r,args.r,args.prefix,args.prefix, args.prefix))
+	else:
+		os.system("{}/fermi2 simplify -CS -R {} -d {} {}.pre.gz 2>  {}.mag.gz.log > {}.mag".format(fermi,args.r,args.r,args.prefix,args.prefix, args.prefix))
 
 	if args.align:
 		os.system("bwa mem -x intractg -t {} {} {}.mag | samtools view -Sbh - | sambamba sort -m 10G -t /dev/stdin -o {}.bam".format(args.cores,args.ref,args.prefix,args.threads,args.prefix))
@@ -36,6 +42,7 @@ def assemble(args,wd):
 version = "1.0.0"
 parser = argparse.ArgumentParser("""Assemblatron: a de novo assembly  pipeline""".format(version),add_help=False)
 parser.add_argument('--assemble'       , help="Perform de novo assembly using the Fermi2 assembler", required=False, action="store_true")
+parser.add_argument('--local'       , help="Perform local de novo assembly using the Fermi2 assembler", required=False, action="store_true")
 parser.add_argument('--sv'             , help="call SV from the aligned contigs", required=False, action="store_true")
 parser.add_argument('--snv'             , help="call snv from the aligned contigs", required=False, action="store_true")
 parser.add_argument('--stats'          , help="compute assembly stats from aligned contigs", required=False, action="store_true")
@@ -51,17 +58,19 @@ if args.assemble:
 	parser.add_argument('--assemble'       , help="Perform de novo assembly using the Fermi2 assembler", required=False, action="store_true")
 	parser.add_argument('--fastq',required = True, type=str, help="input fastq")
 	parser.add_argument('--prefix',required = True,type=str, help="prefix of the output files")
+	parser.add_argument('--noec'      , help="skip error correction, useful for small datasets (local assembly etc)", required=False, action="store_true")
 	parser.add_argument('--cores',type=int, default =16, help="number of cores (default = 16)")
 	parser.add_argument('--batch',type=str, default ="20g", help="batch size for multi-string indexing; 0 for single-string (default=20g)")
 	parser.add_argument('-l',type=int, default =81, help="min match (default = 81)")
 	parser.add_argument('-k',type=int, default =41, help="minimum kmer length for kmc/bfc error correction (default = 41)")
 	parser.add_argument('-r',type=float, default =0.9, help="minimum coverlap ratio between vertices (default=0.9)")
+	parser.add_argument('-A', help="Agressive bubble poping, produce more contigous assemblies, sometimes at cost of lower precisison",required=False, action="store_true")
 	parser.add_argument('--align', help="align contigs to reference using bwa mem", required=False, action="store_true")
 	parser.add_argument('--ref',type=str, help="reference fasta, required for alignment of the contigs")
 	parser.add_argument('--tmp',type=str,default="$TMPDIR", help="tmp directory, kmc will write tmp files here (default=$TMPDIR)")
 	args= parser.parse_args()
 
-	if not os.path.isdir(args.tmp):
+	if not os.path.isdir(args.tmp) and not args.noec:
 		print "error: no such directory {}".format(args.tmp)
 		print "set the --tmp variable to an existing folder"
 		quit()
@@ -70,6 +79,25 @@ if args.assemble:
 		assemble(args,wd)
 	elif args.align and not args.ref:
 		print ("you need a reference to align the contigs: Please supply the reference path through the --ref parameter")
+
+elif args.local:
+	parser = argparse.ArgumentParser("""Assemblatron local - a wrapper for the fermi assembler""")
+	parser.add_argument('--local'       , help="Perform local de novo assembly using the Fermi2 assembler", required=False, action="store_true")
+	parser.add_argument('--bam',required = True, type=str, help="input bam")
+	parser.add_argument('-l',type=int, default =81, help="min match (default = 81)")
+	parser.add_argument('--region',type=str,required=True, help="genomic region to assemble; using sthe ame format  as samtools. Multiple regions are allowed",nargs='*')
+	parser.add_argument('-r',type=float, default =0.9, help="minimum coverlap ratio between vertices (default=0.9)")
+	parser.add_argument('--ref',type=str, help="reference fasta, required for alignment of the contigs")
+	args= parser.parse_args()
+
+
+	fermi="{}/fermikit/fermi.kit/".format(wd)
+	samtools="samtools view -bh {} {} | samtools fastq - ".format(args.bam," ".join(args.region)) 
+	ropebwt="{}/ropebwt2 -dNCr - ".format(fermi)
+	fermi_assemble="{}/fermi2 assemble -l {} - ".format(fermi,args.l) 
+	fermi_simplify="{}/fermi2 simplify -C -R {} -d {} - ".format(fermi,args.r,args.r,args.l)
+
+	os.system("{} | {} | {} | {}".format(samtools,ropebwt,fermi_assemble,fermi_simplify))
 
 elif args.sv:
 
