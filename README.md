@@ -43,7 +43,7 @@ Download the container:
 
 Run assemblatron through the singularity container:
 
-	singularity exec assemblatron.img assemblatron.py --help
+	singularity exec assemblatron.img python /bin/assemblatron.py --help
 
 # Assemble
 Assemblatron performs de novo assembly using a pipeline similar to fermikit. The pipeline is run through the following commands:
