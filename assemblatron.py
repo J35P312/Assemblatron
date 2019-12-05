@@ -37,7 +37,7 @@ def assemble(args,wd):
 		os.system("{}/fermi2 simplify -CS -R {} -d {} {}.pre.gz 2>  {}.mag.gz.log > {}.mag".format(fermi,args.r,args.r,args.prefix,args.prefix, args.prefix))
 
 	if args.align:
-		os.system("bwa mem -x intractg -t {} {} {}.mag | samtools view -Sbh - | sambamba sort -m 10G -t /dev/stdin -o {}.bam".format(args.cores,args.ref,args.prefix,args.threads,args.prefix))
+		os.system("bwa mem -x intractg -t {} {} {}.mag | samtools view -Sbh - | sambamba sort -m 10G -t /dev/stdin -o {}.bam".format(args.cores,args.ref,args.prefix,args.cores,args.prefix))
 
 version = "1.0.0"
 parser = argparse.ArgumentParser("""Assemblatron: a de novo assembly  pipeline""".format(version),add_help=False)
